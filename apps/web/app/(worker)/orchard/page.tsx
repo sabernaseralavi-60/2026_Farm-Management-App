@@ -7,6 +7,7 @@ import { FieldWrap, Select, TextInput } from "@/components/ui/fields";
 import { GlassCard } from "@/components/ui/glass-card";
 import { JalaliDatePicker } from "@/components/ui/jalali-date-picker";
 import { ModuleHero } from "@/components/ui/module-hero";
+import { EDITABLE_DAYS_BACK, isDateEditable } from "@/lib/date-policy";
 import { toFa, todayJStr } from "@/lib/jalaali";
 import { findModuleMeta } from "@/lib/module-meta";
 import { GARDENS, ORCHARD_STATUSES, ORCHARD_TASKS, genUid } from "@/lib/reference-data";
@@ -51,6 +52,7 @@ export default function OrchardPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.date) return alert("لطفاً تاریخ را وارد کنید.");
+    if (!isDateEditable(form.date)) return alert(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
     const record: OrchardRecord = { ...form, uid: editingUid ?? genUid(), synced: false };
     if (editingUid) await update(record);
     else await add(record);
@@ -85,7 +87,11 @@ export default function OrchardPage() {
         <form onSubmit={onSubmit} className="space-y-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <FieldWrap label="تاریخ">
-              <JalaliDatePicker value={form.date} onChange={(v) => setForm({ ...form, date: v })} />
+              <JalaliDatePicker
+                value={form.date}
+                onChange={(v) => setForm({ ...form, date: v })}
+                isDayDisabled={(d) => !isDateEditable(d)}
+              />
             </FieldWrap>
             <FieldWrap label="باغ">
               <Select value={form.garden} onChange={(e) => setForm({ ...form, garden: e.target.value })}>
@@ -138,6 +144,7 @@ export default function OrchardPage() {
             emptyText="هنوز کاری ثبت نشده است."
             onEdit={startEdit}
             onDelete={(uid) => remove(uid)}
+            isRowLocked={(r) => !isDateEditable(r.date)}
           />
         </div>
       </GlassCard>

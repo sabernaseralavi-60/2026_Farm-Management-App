@@ -10,9 +10,11 @@ interface Props {
   onChange: (v: string) => void;
   placeholder?: string;
   className?: string;
+  /** Returns true if a given "yyyy/mm/dd" date should be shown locked/unselectable. */
+  isDayDisabled?: (dateStr: string) => boolean;
 }
 
-export function JalaliDatePicker({ value, onChange, placeholder = "انتخاب تاریخ", className }: Props) {
+export function JalaliDatePicker({ value, onChange, placeholder = "انتخاب تاریخ", className, isDayDisabled }: Props) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const parsed = parseJalaaliStr(value) ?? (() => {
@@ -100,28 +102,34 @@ export function JalaliDatePicker({ value, onChange, placeholder = "انتخاب 
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
-            {days.map((d, i) =>
-              d === null ? (
-                <span key={`e${i}`} className="h-9" />
-              ) : (
+            {days.map((d, i) => {
+              if (d === null) return <span key={`e${i}`} className="h-9" />;
+              const dateStr = `${viewY}/${pad2(viewM)}/${pad2(d)}`;
+              const locked = isDayDisabled?.(dateStr) ?? false;
+              const isSelected = selected?.jy === viewY && selected?.jm === viewM && selected?.jd === d;
+              return (
                 <button
                   key={d}
                   type="button"
+                  disabled={locked}
                   onClick={() => pick(d)}
+                  title={locked ? "این تاریخ قفل شده است" : undefined}
                   className={clsx(
-                    "h-9 rounded-lg text-sm transition-colors hover:bg-leaf-100",
-                    selected?.jy === viewY && selected?.jm === viewM && selected?.jd === d
-                      ? "bg-leaf-600 font-bold text-white hover:bg-leaf-600"
-                      : "text-bark-800",
+                    "h-9 rounded-lg text-sm transition-colors",
+                    locked
+                      ? "cursor-not-allowed text-bark-300 line-through"
+                      : "hover:bg-leaf-100",
+                    !locked && isSelected ? "bg-leaf-600 font-bold text-white hover:bg-leaf-600" : !locked && "text-bark-800",
                   )}
                 >
                   {toFa(d)}
                 </button>
-              ),
-            )}
+              );
+            })}
           </div>
-          <div className="mt-2 text-center">
-            <button type="button" onClick={pickToday} className="rounded-lg bg-sand-100 px-4 py-1.5 text-sm font-semibold text-bark-700 hover:bg-sand-200">
+          <div className="mt-2 flex items-center justify-between">
+            {isDayDisabled && <span className="text-xs text-bark-400">🔒 تاریخ‌های خط‌خورده قفل‌اند</span>}
+            <button type="button" onClick={pickToday} className="mr-auto rounded-lg bg-sand-100 px-4 py-1.5 text-sm font-semibold text-bark-700 hover:bg-sand-200">
               امروز
             </button>
           </div>

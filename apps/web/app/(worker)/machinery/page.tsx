@@ -7,6 +7,7 @@ import { FieldWrap, Select, TextInput } from "@/components/ui/fields";
 import { GlassCard } from "@/components/ui/glass-card";
 import { JalaliDatePicker } from "@/components/ui/jalali-date-picker";
 import { ModuleHero } from "@/components/ui/module-hero";
+import { EDITABLE_DAYS_BACK, isDateEditable } from "@/lib/date-policy";
 import { toFa, todayJStr } from "@/lib/jalaali";
 import { findModuleMeta } from "@/lib/module-meta";
 import { MACHINERY_CATEGORIES, MACHINES, genUid } from "@/lib/reference-data";
@@ -54,6 +55,7 @@ export default function MachineryPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.date) return alert("لطفاً تاریخ را وارد کنید.");
+    if (!isDateEditable(form.date)) return alert(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
     const start = form.start === "" ? "" : Number(form.start);
     const end = form.end === "" ? "" : Number(form.end);
     const usefulHours = start !== "" && end !== "" && end >= start ? +(end - start).toFixed(2) : "";
@@ -79,7 +81,11 @@ export default function MachineryPage() {
         <form onSubmit={onSubmit} className="space-y-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <FieldWrap label="تاریخ">
-              <JalaliDatePicker value={form.date} onChange={(v) => setForm({ ...form, date: v })} />
+              <JalaliDatePicker
+                value={form.date}
+                onChange={(v) => setForm({ ...form, date: v })}
+                isDayDisabled={(d) => !isDateEditable(d)}
+              />
             </FieldWrap>
             <FieldWrap label="نام ماشین">
               <Select value={form.machine} onChange={(e) => setForm({ ...form, machine: e.target.value })}>
@@ -131,6 +137,7 @@ export default function MachineryPage() {
             emptyText="هنوز رویدادی ثبت نشده است."
             onEdit={startEdit}
             onDelete={(uid) => remove(uid)}
+            isRowLocked={(r) => !isDateEditable(r.date)}
           />
         </div>
       </GlassCard>

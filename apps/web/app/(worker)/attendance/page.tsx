@@ -8,6 +8,7 @@ import { FieldWrap, RadioGroup, TextInput } from "@/components/ui/fields";
 import { GlassCard } from "@/components/ui/glass-card";
 import { JalaliDatePicker } from "@/components/ui/jalali-date-picker";
 import { ModuleHero } from "@/components/ui/module-hero";
+import { EDITABLE_DAYS_BACK, isDateEditable } from "@/lib/date-policy";
 import { findModuleMeta } from "@/lib/module-meta";
 import { genUid } from "@/lib/reference-data";
 import { toFa, todayJStr } from "@/lib/jalaali";
@@ -30,7 +31,11 @@ function shiftSummary(shift?: ShiftEntry) {
   if (!shift) return "—";
   const type = shift.workType === "lump" ? "مقطوع" : "پایه";
   const time = shift.in && shift.out ? `${toFa(shift.in)}–${toFa(shift.out)}` : "—";
-  return `${time} · ${type}`;
+  return (
+    <>
+      <bdi dir="ltr">{time}</bdi> · {type}
+    </>
+  );
 }
 
 export default function AttendancePage() {
@@ -62,6 +67,7 @@ export default function AttendancePage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.date) return alert("لطفاً تاریخ را وارد کنید.");
+    if (!isDateEditable(form.date)) return alert(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
     if (!form.worker.trim()) return alert("نام کارگر را وارد کنید.");
     if (form.status === "present" && !morningOn && !eveningOn) {
       return alert("حداقل یکی از شیفت‌های صبح یا عصر را فعال کنید، یا وضعیت را «مرخصی» انتخاب کنید.");
@@ -117,7 +123,11 @@ export default function AttendancePage() {
         <form onSubmit={onSubmit} className="space-y-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FieldWrap label="تاریخ">
-              <JalaliDatePicker value={form.date} onChange={(v) => setForm({ ...form, date: v })} />
+              <JalaliDatePicker
+                value={form.date}
+                onChange={(v) => setForm({ ...form, date: v })}
+                isDayDisabled={(d) => !isDateEditable(d)}
+              />
             </FieldWrap>
             <FieldWrap label="نام کارگر">
               <TextInput
@@ -195,6 +205,7 @@ export default function AttendancePage() {
             emptyText="هنوز رکوردی ثبت نشده است."
             onEdit={startEdit}
             onDelete={(uid) => remove(uid)}
+            isRowLocked={(r) => !isDateEditable(r.date)}
           />
         </div>
       </GlassCard>

@@ -18,6 +18,9 @@ interface Props<T extends Synced> {
   onEdit: (row: T) => void;
   onDelete: (uid: string) => void;
   deleteConfirmText?: string;
+  /** Rows for which this returns true show a lock badge instead of edit/delete
+   * (used for records whose date has aged out of the editable window). */
+  isRowLocked?: (row: T) => boolean;
 }
 
 export function EditableRecordTable<T extends Synced>({
@@ -27,6 +30,7 @@ export function EditableRecordTable<T extends Synced>({
   onEdit,
   onDelete,
   deleteConfirmText = "این رکورد حذف شود؟",
+  isRowLocked,
 }: Props<T>) {
   if (rows.length === 0) {
     return <div className="py-10 text-center text-fluid-sm text-bark-500">{emptyText}</div>;
@@ -47,38 +51,47 @@ export function EditableRecordTable<T extends Synced>({
           </tr>
         </thead>
         <tbody className="divide-y divide-sand-200">
-          {rows.map((row) => (
-            <tr key={row.uid}>
-              {columns.map((c) => (
-                <td key={c.key} data-label={c.label} className={c.className ?? "px-4 py-3"}>
-                  {c.render(row)}
+          {rows.map((row) => {
+            const locked = isRowLocked?.(row) ?? false;
+            return (
+              <tr key={row.uid}>
+                {columns.map((c) => (
+                  <td key={c.key} data-label={c.label} className={c.className ?? "px-4 py-3"}>
+                    {c.render(row)}
+                  </td>
+                ))}
+                <td data-label="همگام‌سازی" className="px-4 py-3">
+                  <SyncBadge synced={row.synced} />
                 </td>
-              ))}
-              <td data-label="همگام‌سازی" className="px-4 py-3">
-                <SyncBadge synced={row.synced} />
-              </td>
-              <td data-label="عملیات" className="px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onEdit(row)}
-                    className="font-semibold text-water-700 hover:text-water-600"
-                  >
-                    ✏️ ویرایش
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (confirm(deleteConfirmText)) onDelete(row.uid);
-                    }}
-                    className="font-semibold text-red-500 hover:text-red-700"
-                  >
-                    🗑 حذف
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
+                <td data-label="عملیات" className="px-4 py-3">
+                  {locked ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-bark-400" title="این تاریخ قفل شده و دیگر قابل تغییر نیست">
+                      🔒 قفل‌شده
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(row)}
+                        className="font-semibold text-water-700 hover:text-water-600"
+                      >
+                        ✏️ ویرایش
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm(deleteConfirmText)) onDelete(row.uid);
+                        }}
+                        className="font-semibold text-red-500 hover:text-red-700"
+                      >
+                        🗑 حذف
+                      </button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

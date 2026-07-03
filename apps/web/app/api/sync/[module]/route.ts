@@ -1,4 +1,7 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { isDateEditable } from "@/lib/date-policy";
+import { GATE_COOKIE, verifyGateToken } from "@/lib/gate";
 import { prisma } from "@/lib/prisma";
 import { SYNC_SCHEMAS, toPrismaData } from "@/lib/sync-schemas";
 import type { ModuleKey } from "@/lib/types";
@@ -25,6 +28,12 @@ function isModuleKey(v: string): v is ModuleKey {
 // duplicate sends after a flaky connection): the second call just updates
 // the same row instead of creating a new one.
 export async function POST(request: Request, ctx: RouteContext<"/api/sync/[module]">) {
+  const cookieStore = await cookies();
+  const gateOk = await verifyGateToken(cookieStore.get(GATE_COOKIE)?.value);
+  if (!gateOk) {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+
   const { module } = await ctx.params;
 
   if (!isModuleKey(module)) {
@@ -47,19 +56,27 @@ export async function POST(request: Request, ctx: RouteContext<"/api/sync/[modul
     );
   }
 
-  const uid = (parsed.data as { uid: string }).uid;
+  const record = parsed.data as { uid: string; date: string };
+  if (!isDateEditable(record.date)) {
+    return NextResponse.json(
+      { ok: false, error: "این تاریخ قفل شده و دیگر قابل ثبت/ویرایش نیست." },
+      { status: 403 },
+    );
+  }
+
+  const uid = record.uid;
   const data = toPrismaData(module, parsed.data as Record<string, unknown>);
   const delegateKey = DELEGATE[module];
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const delegate = (prisma as any)[delegateKey];
-    const record = await delegate.upsert({
+    const saved = await delegate.upsert({
       where: { uid },
       create: { uid, ...data },
       update: data,
     });
-    return NextResponse.json({ ok: true, uid: record.uid });
+    return NextResponse.json({ ok: true, uid: saved.uid });
   } catch (err) {
     console.error(`sync upsert failed for ${module}`, err);
     return NextResponse.json({ ok: false, error: "server error" }, { status: 500 });

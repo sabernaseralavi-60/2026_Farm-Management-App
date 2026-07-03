@@ -7,6 +7,7 @@ import { FieldWrap, Select, Textarea, TextInput } from "@/components/ui/fields";
 import { GlassCard } from "@/components/ui/glass-card";
 import { JalaliDatePicker } from "@/components/ui/jalali-date-picker";
 import { ModuleHero } from "@/components/ui/module-hero";
+import { EDITABLE_DAYS_BACK, isDateEditable } from "@/lib/date-policy";
 import { toFa, todayJStr } from "@/lib/jalaali";
 import { findModuleMeta } from "@/lib/module-meta";
 import { SEC_ACTION, SEC_IDENT, SEC_TYPES, genUid } from "@/lib/reference-data";
@@ -51,6 +52,7 @@ export default function SecurityPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.date) return alert("لطفاً تاریخ را وارد کنید.");
+    if (!isDateEditable(form.date)) return alert(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
     if (!form.title.trim()) return alert("عنوان حادثه را وارد کنید.");
     const record: SecurityRecord = { ...form, uid: editingUid ?? genUid(), synced: false, title: form.title.trim() };
     if (editingUid) await update(record);
@@ -80,7 +82,11 @@ export default function SecurityPage() {
         <form onSubmit={onSubmit} className="space-y-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <FieldWrap label="تاریخ">
-              <JalaliDatePicker value={form.date} onChange={(v) => setForm({ ...form, date: v })} />
+              <JalaliDatePicker
+                value={form.date}
+                onChange={(v) => setForm({ ...form, date: v })}
+                isDayDisabled={(d) => !isDateEditable(d)}
+              />
             </FieldWrap>
             <FieldWrap label="نوع حادثه">
               <Select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
@@ -134,6 +140,7 @@ export default function SecurityPage() {
             emptyText="هنوز رکوردی ثبت نشده است."
             onEdit={startEdit}
             onDelete={(uid) => remove(uid)}
+            isRowLocked={(r) => !isDateEditable(r.date)}
           />
         </div>
       </GlassCard>
