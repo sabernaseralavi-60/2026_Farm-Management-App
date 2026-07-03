@@ -1,0 +1,53 @@
+---
+title: راهنمای دیپلوی
+---
+
+# راهنمای دیپلوی
+
+## ۱. آماده‌سازی دیتابیس (PostgreSQL روی Neon)
+
+1. یک حساب رایگان در [neon.tech](https://neon.tech) بسازید (بدون نیاز به کارت اعتباری).
+2. یک پروژه‌ی جدید بسازید و **Connection string** نوع «Pooled connection» را کپی کنید.
+3. در `apps/web/.env` مقدار `DATABASE_URL` را با همین رشته جایگزین کنید (از روی الگوی `apps/web/.env.example`).
+
+برای توسعه‌ی محلی بدون نیاز به ساخت حساب، می‌توانید به‌جای آن دستور زیر را در `apps/web` اجرا کنید — یک Postgres محلی (بدون Docker) بالا می‌آورد و `DATABASE_URL` مناسب را چاپ می‌کند:
+
+```bash
+npx prisma dev
+```
+
+## ۲. اجرای Migration و ساخت اکانت مالک
+
+```bash
+cd apps/web
+npm install
+npx prisma migrate deploy   # اعمال migration روی دیتابیس
+npm run db:seed             # ساخت اکانت مالک از روی OWNER_EMAIL / OWNER_PASSWORD در .env
+```
+
+## ۳. متغیرهای محیطی لازم
+
+| متغیر | توضیح |
+| --- | --- |
+| `DATABASE_URL` | رشته‌ی اتصال PostgreSQL (Neon یا هر Postgres دیگر) |
+| `AUTH_SECRET` | یک رشته‌ی تصادفی برای امضای نشست ورود مالک — با `openssl rand -base64 32` بسازید |
+| `OWNER_EMAIL` / `OWNER_PASSWORD` | ایمیل و رمز عبور اولیه‌ی مالک، فقط برای اسکریپت seed لازم است |
+
+## ۴. اجرای محلی
+
+```bash
+npm run dev:web    # اپ اصلی روی http://localhost:3000
+npm run dev:docs   # همین سایت مستندات روی پورت جداگانه
+```
+
+## ۵. دیپلوی
+
+اپ `apps/web` یک اپ استاندارد Next.js App Router است و روی هر پلتفرمی که از Next.js پشتیبانی می‌کند (مثل Vercel) قابل دیپلوی است:
+
+1. مخزن گیت‌هاب را به پلتفرم دیپلوی متصل کنید و **Root Directory** پروژه را روی `apps/web` تنظیم کنید.
+2. متغیرهای محیطی بخش ۳ را در تنظیمات پروژه وارد کنید.
+3. پس از اولین دیپلوی موفق، یک‌بار `npx prisma migrate deploy` و `npm run db:seed` را (با همان `DATABASE_URL` تولید) اجرا کنید.
+
+سایت مستندات (`apps/docs`) هم به همین شکل، با Root Directory روی `apps/docs`، مستقل دیپلوی می‌شود و نیازی به دیتابیس ندارد.
+
+> این مخزن به‌صورت پیش‌فرض به هیچ سرویس هاستینگی متصل نشده — دیپلوی واقعی نیازمند یک حساب کاربری روی پلتفرم موردنظر شماست.

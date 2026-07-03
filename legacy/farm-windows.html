@@ -1,0 +1,1070 @@
+<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>سامانه مدیریت مزرعه حسین‌آباد شهکل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dexie/4.0.11/dexie.min.js"></script>
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:["Vazirmatn","sans-serif"]},colors:{sand:{50:"#FAF8F2",100:"#F4F1E9",200:"#EAE3D4",300:"#DCD2BD"},bark:{500:"#7A5736",600:"#69492C",700:"#573B23",800:"#46301D"},leaf:{500:"#10B981",600:"#059669",700:"#047857"},water:{400:"#38BDF8",500:"#0EA5E9",600:"#0284C7",700:"#0369A1"},gold:{500:"#D97706",600:"#B45309",700:"#92400E"}}}}};</script>
+<style>
+body{font-family:"Vazirmatn",sans-serif;}
+.hero-sky{position:absolute;inset:0;background:linear-gradient(165deg,#0f2027 0%,#2c2113 28%,#6b4423 55%,#c97f3a 80%,#f3b563 100%);}
+.hero-glow{position:absolute;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(255,210,130,.55),rgba(255,210,130,0) 70%);top:-180px;left:50%;transform:translateX(-50%);filter:blur(4px);}
+.hero-dots{position:absolute;inset:0;opacity:.18;background-image:radial-gradient(rgba(255,255,255,.7) 1.2px,transparent 1.2px);background-size:22px 22px;}
+.hero-grove{position:absolute;inset:0;opacity:.96;filter:drop-shadow(0 10px 18px rgba(0,0,0,.35));}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,10,5,.45) 0%,rgba(15,10,5,.05) 40%,rgba(15,10,5,.65) 100%);}
+.tab-pane{animation:fadeIn .35s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.banner{position:relative;overflow:hidden;border-radius:1.25rem;padding:1.5rem 1.6rem;margin-bottom:1.25rem;color:#fff;display:flex;align-items:center;justify-content:space-between;box-shadow:0 14px 30px rgba(0,0,0,.16);}
+.banner h2{font-size:1.3rem;font-weight:800;display:flex;align-items:center;gap:.6rem;}
+.banner p{opacity:.92;margin-top:.3rem;font-size:.9rem;}
+.banner .banner-icon{position:relative;z-index:3;flex-shrink:0;width:74px;height:74px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.85rem;color:#fff;background:rgba(255,255,255,.16);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.4);box-shadow:0 10px 22px rgba(0,0,0,.22),inset 0 1px 1px rgba(255,255,255,.5);transition:transform .35s cubic-bezier(.34,1.56,.64,1);}
+.banner:hover .banner-icon{transform:scale(1.07) rotate(-4deg);}
+.banner .banner-bgicon{position:absolute;z-index:1;font-size:10rem;opacity:.14;left:6%;top:50%;transform:translateY(-50%) rotate(-12deg);pointer-events:none;}
+.banner .banner-art{position:absolute;left:-10px;top:-10px;bottom:-10px;width:160px;opacity:.22;pointer-events:none;z-index:1;}
+.banner .deco{position:absolute;border-radius:50%;z-index:1;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.4),rgba(255,255,255,0) 72%);filter:blur(1px);}
+.banner .deco.d1{width:160px;height:160px;left:28%;top:-70px;}
+.banner .deco.d2{width:110px;height:110px;left:58%;bottom:-55px;}
+.banner .banner-txt{position:relative;z-index:3;}
+.banner::before{content:"";position:absolute;inset:0;z-index:0;opacity:.16;background-image:radial-gradient(rgba(255,255,255,.9) 1px,transparent 1px);background-size:16px 16px;}
+.banner::after{content:"";position:absolute;inset:0;z-index:2;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.16) 50%,transparent 70%);background-size:220% 100%;animation:shimmer 6s linear infinite;}
+@keyframes shimmer{0%{background-position:120% 0;}100%{background-position:-120% 0;}}
+.b-hr{background:linear-gradient(135deg,#059669,#047857);}
+.b-log{background:linear-gradient(135deg,#7A5736,#46301D);}
+.b-irr{background:linear-gradient(135deg,#0EA5E9,#0369A1);}
+.b-spray{background:linear-gradient(135deg,#14b8a6,#0f766e);}
+.b-orchard{background:linear-gradient(135deg,#2f9e44,#14532d);}
+.b-inv{background:linear-gradient(135deg,#D97706,#92400E);}
+.b-acc{background:linear-gradient(135deg,#10B981,#0f766e);}
+.b-harv{background:linear-gradient(135deg,#f59e0b,#b45309);}
+.b-sheep{background:linear-gradient(135deg,#a16207,#422006);}
+.b-sec{background:linear-gradient(135deg,#475569,#1e293b);}
+.b-rep{background:linear-gradient(135deg,#69492C,#334155);}
+.card{background:#fff;border:1px solid #EAE3D4;border-radius:1.25rem;box-shadow:0 6px 18px rgba(86,59,35,.06);}
+.switch{position:relative;display:inline-flex;align-items:center;cursor:pointer;}
+.switch input{display:none;}
+.switch .track{width:64px;height:32px;border-radius:999px;background:#EF4444;transition:background .3s ease;position:relative;}
+.switch .knob{position:absolute;top:3px;right:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:all .3s ease;box-shadow:0 1px 4px rgba(0,0,0,.3);}
+.switch input:checked + .track{background:#059669;}
+.switch input:checked + .track .knob{right:35px;}
+.data-table tbody tr{transition:background .2s ease;}
+.data-table tbody tr:hover{background:#F4F1E9;}
+.del{color:#ef4444;}.del:hover{color:#b91c1c;}
+.badge{display:inline-flex;align-items:center;gap:.25rem;padding:.25rem .55rem;border-radius:.6rem;font-size:.72rem;font-weight:700;}
+.badge-ok{color:#047857;background:rgba(16,185,129,.15);}
+.badge-no{color:#dc2626;background:rgba(239,68,68,.15);}
+.badge-warn{color:#92400E;background:rgba(217,119,6,.15);}
+.badge-info{color:#0369A1;background:rgba(14,165,233,.15);}
+.chip{display:inline-flex;align-items:center;gap:.5rem;padding:.35rem .75rem;border-radius:.75rem;border:1px solid;font-weight:600;font-size:.85rem;}
+.chip-gold{background:rgba(217,119,6,.1);border-color:rgba(217,119,6,.3);color:#92400E;}
+.chip-neg{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#b91c1c;}
+.irrigation-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:8px;}
+.cell{aspect-ratio:1/1;border-radius:12px;border:1px solid #DCD2BD;background:#EAE3D4;color:#8a7a5e;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;transition:transform .18s cubic-bezier(.34,1.56,.64,1),background .25s ease,box-shadow .25s ease,color .25s ease;}
+.cell:hover{transform:translateY(-2px);}
+.cell.on{background:linear-gradient(145deg,#38BDF8,#0284C7);border-color:#0369A1;color:#fff;box-shadow:0 0 0 3px rgba(14,165,233,.18),0 6px 14px rgba(2,132,199,.35);transform:scale(1.04);}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(140px);background:#047857;color:#fff;padding:12px 22px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:transform .4s cubic-bezier(.34,1.56,.64,1);z-index:120;font-weight:600;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+.fld{width:100%;border-radius:.75rem;border:1px solid #DCD2BD;background:#FAF8F2;padding:.625rem .75rem;outline:none;transition:box-shadow .2s,border-color .2s;}
+.fld:focus{box-shadow:0 0 0 2px #10B981;border-color:#10B981;}
+.lbl{display:block;font-size:.875rem;font-weight:600;margin-bottom:.25rem;color:#69492C;}
+.jdate{cursor:pointer;padding-left:2rem;}
+.btn{font-weight:700;border-radius:.75rem;box-shadow:0 4px 12px rgba(0,0,0,.08);transition:transform .12s ease,filter .2s ease;display:inline-flex;align-items:center;gap:.5rem;justify-content:center;}
+.btn:hover{filter:brightness(1.05);}
+.btn:active{transform:scale(.97);}
+.btn-green{background:#059669;color:#fff;}.btn-green:hover{background:#047857;}
+.btn-brown{background:#69492C;color:#fff;}.btn-brown:hover{background:#573B23;}
+.btn-water{background:#0284C7;color:#fff;}.btn-water:hover{background:#0369A1;}
+.btn-soft{background:#EAE3D4;color:#573B23;}.btn-soft:hover{background:#DCD2BD;}
+.btn-red{background:#dc2626;color:#fff;}
+.pop{animation:pop .4s ease;}
+@keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.18);}100%{transform:scale(1);}}
+.jdp{position:absolute;z-index:130;background:#fff;border:1px solid #DCD2BD;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.18);padding:12px;width:280px;}
+.jdp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+#jdp-title{font-weight:700;color:#573B23;}
+.jdp-nav{width:32px;height:32px;border-radius:8px;background:#F4F1E9;color:#573B23;font-size:18px;border:none;cursor:pointer;}
+.jdp-nav:hover{background:#EAE3D4;}
+.jdp-week{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:12px;color:#8a7a5e;margin-bottom:4px;}
+.jdp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.jdp-grid > span{height:34px;}
+.jdp-day{height:34px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-size:13px;color:#46301D;}
+.jdp-day:hover{background:rgba(16,185,129,.13);}
+.jdp-day.sel{background:#059669;color:#fff;font-weight:700;}
+.jdp-foot{margin-top:8px;text-align:center;}
+.jdp-foot button{background:#F4F1E9;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;color:#573B23;font-weight:600;}
+::-webkit-scrollbar{height:10px;width:10px;}
+::-webkit-scrollbar-thumb{background:#DCD2BD;border-radius:999px;}
+.mw-cell{max-width:200px;}
+#hero{height:15rem;}
+.topnav{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.05);position:sticky;top:0;z-index:60;border-bottom:1px solid #EAE3D4;}
+.topnav .inner{max-width:1152px;margin:0 auto;display:flex;flex-wrap:wrap;justify-content:center;}
+.topnav button{flex-shrink:0;padding:.9rem 1.1rem;font-weight:700;color:#573B23;white-space:nowrap;border-bottom:3px solid transparent;transition:all .25s ease;display:flex;align-items:center;gap:.5rem;}
+.topnav button:hover{background:#FAF8F2;}
+.topnav button.active{color:#573B23;border-bottom-color:#059669;background:#fff;}
+.card:hover{box-shadow:0 12px 28px rgba(86,59,35,.12);transition:box-shadow .25s ease;}
+.qcard{background:#FAF8F2;border:1px solid #EAE3D4;border-radius:1rem;padding:1.1rem;}
+details > summary{list-style:none;}
+details > summary::-webkit-details-marker{display:none;}
+/* ===== ناوبری موبایل (منوی کشویی) ===== */
+.mbar{display:none;}
+.mdrawer{position:fixed;inset:0;z-index:200;display:none;}
+.mdrawer.open{display:block;}
+.mdrawer .scrim{position:absolute;inset:0;background:rgba(40,28,15,.5);backdrop-filter:blur(2px);}
+.mdrawer .panel{position:absolute;top:0;right:0;bottom:0;width:84%;max-width:320px;background:#FAF8F2;box-shadow:-10px 0 30px rgba(0,0,0,.25);overflow-y:auto;animation:slideIn .28s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;}
+@keyframes slideIn{from{transform:translateX(100%);}to{transform:translateX(0);}}
+.mdrawer .panel-head{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.25rem;background:linear-gradient(135deg,#059669,#047857);color:#fff;}
+.mdrawer .panel-head button{font-size:1.4rem;background:rgba(255,255,255,.18);width:36px;height:36px;border-radius:.6rem;border:none;color:#fff;}
+.mdrawer nav{display:flex;flex-direction:column;padding:.6rem;}
+.mdrawer nav button{display:flex;align-items:center;gap:.85rem;padding:.85rem 1rem;border-radius:.9rem;font-weight:700;color:#573B23;text-align:right;}
+.mdrawer nav button i{width:22px;text-align:center;color:#069669;}
+.mdrawer nav button.active{background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(16,185,129,.05));color:#047857;}
+.mdrawer nav button.active i{color:#047857;}
+@media (max-width: 767px){
+  .topnav{display:none;}
+  .mbar{display:flex;}
+}
+/* ===== جدول‌ها به‌صورت کارت در موبایل ===== */
+@media (max-width: 640px){
+  .data-table thead{display:none;}
+  .data-table, .data-table tbody, .data-table tr, .data-table td{display:block;width:100%;}
+  .data-table{border:none;}
+  .data-table tbody tr{margin:0 0 .85rem;border:1px solid #EAE3D4;border-radius:1rem;padding:.25rem;box-shadow:0 2px 10px rgba(86,59,35,.07);background:#fff;}
+  .data-table tbody tr:hover{background:#fff;}
+  .data-table td{display:flex;justify-content:space-between;align-items:center;gap:.75rem;padding:.55rem .85rem;border-bottom:1px dashed #EAE3D4;white-space:normal;text-align:left;}
+  .data-table td:last-child{border-bottom:none;}
+  .data-table td.mw-cell{max-width:none;}
+  .data-table td::before{content:attr(data-label);font-weight:700;color:#69492C;font-size:.75rem;flex-shrink:0;}
+  .data-table td:not([data-label])::before{content:none;}
+}
+</style></head><body class="bg-sand-100 text-bark-800 min-h-screen"><header class="relative overflow-hidden flex items-center justify-center text-center" id="hero">
+  <div class="hero-sky"></div>
+  <div class="hero-dots"></div>
+  <div class="hero-glow"></div>
+  <svg class="hero-grove w-full h-full" viewBox="0 0 1200 260" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="palmGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2d4a2e"/><stop offset="100%" stop-color="#10210f"/></linearGradient>
+      <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1c140b"/><stop offset="100%" stop-color="#0d0905"/></linearGradient>
+      <path id="frond" d="M0,0 Q46,-9 88,4 Q46,12 0,5 Z" fill="url(#palmGrad)"/>
+      <g id="palm"><rect x="-3.5" y="4" width="7" height="156" rx="3.5" fill="url(#palmGrad)"/><g transform="translate(0,6)"><use href="#frond" transform="rotate(-100)"/><use href="#frond" transform="rotate(-72)"/><use href="#frond" transform="rotate(-44)"/><use href="#frond" transform="rotate(-16)"/><use href="#frond" transform="rotate(16)"/><use href="#frond" transform="rotate(44)"/><use href="#frond" transform="rotate(72)"/><use href="#frond" transform="rotate(100)"/><use href="#frond" transform="rotate(140)"/><use href="#frond" transform="rotate(-140)"/></g></g>
+    </defs>
+    <circle cx="600" cy="70" r="46" fill="#ffd9a0" opacity=".9"/>
+    <circle cx="600" cy="70" r="46" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="10"/>
+    <use href="#palm" transform="translate(110,112) scale(1.0)"/><use href="#palm" transform="translate(290,122) scale(1.18)"/><use href="#palm" transform="translate(470,106) scale(0.85)"/><use href="#palm" transform="translate(650,124) scale(1.05)"/><use href="#palm" transform="translate(830,108) scale(0.9)"/><use href="#palm" transform="translate(1000,120) scale(1.12)"/><use href="#palm" transform="translate(1150,110) scale(0.92)"/>
+    <rect x="0" y="232" width="1200" height="40" fill="url(#groundGrad)"/>
+    <rect x="0" y="230" width="1200" height="3" fill="#f3b563" opacity=".55"/>
+  </svg>
+  <div class="hero-overlay"></div>
+  <div class="relative z-10 px-4 py-7">
+    <h1 class="text-white text-2xl sm:text-4xl font-extrabold drop-shadow-lg flex items-center justify-center gap-3"><i class="fa-solid fa-tractor text-leaf-500"></i> سامانه مدیریت مزرعه</h1>
+    <p class="text-white text-lg sm:text-2xl font-bold mt-2 drop-shadow">«حسین‌آباد شهکل»</p>
+    <p class="text-sand-100/90 mt-1 text-sm sm:text-base drop-shadow flex items-center justify-center gap-2"><i class="fa-solid fa-location-dot"></i> واقع در شهرستان ریگان</p>
+  </div>
+</header><nav class="topnav"><div class="inner"><button onclick="showTab('hr')" id="tab-hr" class="active"><i class="fa-solid fa-users"></i> حضور و غیاب</button><button onclick="showTab('log')" id="tab-log" class=""><i class="fa-solid fa-screwdriver-wrench"></i> ماشین‌آلات</button><button onclick="showTab('irr')" id="tab-irr" class=""><i class="fa-solid fa-droplet"></i> آبیاری</button><button onclick="showTab('spray')" id="tab-spray" class=""><i class="fa-solid fa-spray-can-sparkles"></i> کود و سم</button><button onclick="showTab('orchard')" id="tab-orchard" class=""><i class="fa-solid fa-tree"></i> امورات باغی</button><button onclick="showTab('inv')" id="tab-inv" class=""><i class="fa-solid fa-boxes-stacked"></i> انبارداری</button><button onclick="showTab('acc')" id="tab-acc" class=""><i class="fa-solid fa-wallet"></i> حسابداری</button><button onclick="showTab('harv')" id="tab-harv" class=""><i class="fa-solid fa-wheat-awn"></i> برداشت و فروش</button><button onclick="showTab('sheep')" id="tab-sheep" class=""><i class="fa-solid fa-paw"></i> پرورش گوسفند</button><button onclick="showTab('security')" id="tab-security" class=""><i class="fa-solid fa-shield-halved"></i> امنیت و تردد</button><button onclick="showTab('rep')" id="tab-rep" class=""><i class="fa-solid fa-clipboard-list"></i> گزارش مدیریتی</button></div></nav>
+<div class="mbar items-center justify-between bg-white border-b border-sand-200 px-3 py-2.5 sticky top-0 z-50 shadow-sm">
+  <button onclick="openDrawer()" class="w-10 h-10 rounded-xl bg-leaf-600 text-white flex items-center justify-center text-lg"><i class="fa-solid fa-bars"></i></button>
+  <span id="mbar-title" class="font-extrabold text-bark-700 flex items-center gap-2"><i class="fa-solid fa-users text-leaf-600"></i> حضور و غیاب</span>
+  <span class="w-10"></span>
+</div>
+<div id="mdrawer" class="mdrawer"><div class="scrim" onclick="closeDrawer()"></div><div class="panel">
+  <div class="panel-head"><span class="font-extrabold flex items-center gap-2"><i class="fa-solid fa-tractor"></i> منوی سامانه</span><button onclick="closeDrawer()"><i class="fa-solid fa-xmark"></i></button></div>
+  <nav>
+    <button onclick="showTab('hr')" id="tab-hr" class="active"><i class="fa-solid fa-users"></i> حضور و غیاب</button>
+    <button onclick="showTab('log')" id="tab-log"><i class="fa-solid fa-screwdriver-wrench"></i> ماشین‌آلات</button>
+    <button onclick="showTab('irr')" id="tab-irr"><i class="fa-solid fa-droplet"></i> آبیاری</button>
+    <button onclick="showTab('spray')" id="tab-spray"><i class="fa-solid fa-spray-can-sparkles"></i> کود و سم</button>
+    <button onclick="showTab('orchard')" id="tab-orchard"><i class="fa-solid fa-tree"></i> امورات باغی</button>
+    <button onclick="showTab('inv')" id="tab-inv"><i class="fa-solid fa-boxes-stacked"></i> انبارداری</button>
+    <button onclick="showTab('acc')" id="tab-acc"><i class="fa-solid fa-wallet"></i> حسابداری</button>
+    <button onclick="showTab('harv')" id="tab-harv"><i class="fa-solid fa-wheat-awn"></i> برداشت و فروش</button>
+    <button onclick="showTab('sheep')" id="tab-sheep"><i class="fa-solid fa-paw"></i> پرورش گوسفند</button>
+    <button onclick="showTab('security')" id="tab-security"><i class="fa-solid fa-shield-halved"></i> امنیت و تردد</button>
+    <button onclick="showTab('rep')" id="tab-rep"><i class="fa-solid fa-clipboard-list"></i> گزارش مدیریتی</button>
+  </nav>
+</div></div>
+<main class="max-w-6xl mx-auto p-4 sm:p-6">
+<datalist id="workers-list"></datalist>
+
+<section id="pane-hr" class="tab-pane">
+  <div class="banner b-hr"><div class="deco d1"></div><div class="deco d2"></div><i class="banner-bgicon fa-solid fa-user-clock"></i><div class="banner-txt"><h2><i class="fa-solid fa-user-clock"></i> حضور و غیاب و عملکرد</h2><p>ثبت ورود/خروج، نوع کار، کیفیت و پاداش روزانه‌ی کارگران</p></div><div class="banner-icon"><i class="fa-solid fa-user-clock"></i></div></div>
+  <div class="card section-pad p-5 sm:p-7 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div><label class="lbl">تاریخ</label><div class="relative"><input type="text" id="hr-date" class="fld jdate" readonly onclick="openPicker(this)" placeholder="انتخاب تاریخ"><i class="fa-regular fa-calendar pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bark-500"></i></div></div>
+      <div><label class="lbl">نام کارگر <span class="text-bark-500 font-normal text-xs">(انتخاب یا تایپ)</span></label><input type="text" id="hr-worker" list="workers-list" class="fld" placeholder="انتخاب از لیست یا ورود نام جدید"></div>
+      <div><label class="lbl">مبلغ پاداش روزانه (تومان)</label><input type="number" id="hr-bonus" min="0" placeholder="مثلاً ۵۰۰۰۰" class="fld"></div>
+      <div><label class="lbl">ساعت ورود</label><input type="time" id="hr-in" class="fld"></div>
+      <div><label class="lbl">ساعت خروج</label><input type="time" id="hr-out" class="fld"></div>
+      <div><label class="lbl">نوع کار</label><div class="flex gap-4 items-center bg-sand-50 border border-sand-300 rounded-xl px-3 py-2.5"><label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="hr-type" value="فقط پایه" class="accent-leaf-600" checked> فقط پایه</label><label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="hr-type" value="مقطوع" class="accent-leaf-600"> مقطوع</label></div></div>
+      <div class="sm:col-span-2"><label class="lbl">شرح دقیق کار انجام‌شده</label><textarea id="hr-desc" rows="2" placeholder="توضیحات کار..." class="fld resize-none"></textarea></div>
+      <div><label class="lbl">تأیید کیفیت توسط مدیر</label><div class="flex items-center gap-3 bg-sand-50 border border-sand-300 rounded-xl px-3 py-2"><label class="switch"><input type="checkbox" id="hr-quality"><span class="track"><span class="knob"></span></span></label><span id="hr-quality-label" class="text-sm font-semibold text-red-500">تأیید نشده</span></div></div>
+    </div>
+    <div class="mt-6"><button onclick="addHr()" class="btn btn-green btn-inline px-6 py-3"><i class="fa-solid fa-plus"></i> ثبت در لیست</button></div>
+  </div>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto"><table class="data-table w-full text-sm text-right whitespace-nowrap"><thead class="bg-bark-700 text-white"><tr><th class="px-4 py-3">تاریخ</th><th class="px-4 py-3">کارگر</th><th class="px-4 py-3">ورود</th><th class="px-4 py-3">خروج</th><th class="px-4 py-3">نوع کار</th><th class="px-4 py-3">شرح کار</th><th class="px-4 py-3">کیفیت</th><th class="px-4 py-3">پاداش</th><th class="px-4 py-3">همگام‌سازی</th><th class="px-4 py-3">حذف</th></tr></thead><tbody id="hr-tbody" class="divide-y divide-sand-200"></tbody></table></div>
+    <div id="hr-empty" class="text-center text-bark-500 py-8 text-sm">هنوز رکوردی ثبت نشده است.</div>
+  </div>
+</section>
+
+<section id="pane-log" class="tab-pane hidden">
+  <div class="banner b-log"><div class="deco d1"></div><div class="deco d2"></div><i class="banner-bgicon fa-solid fa-screwdriver-wrench"></i><div class="banner-txt"><h2><i class="fa-solid fa-screwdriver-wrench"></i> لاگ‌بوک ماشین‌آلات</h2><p>شناسنامه و رویدادهای تراکتورها و ماشین‌آلات مزرعه</p></div><div class="banner-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div></div>
+  <div class="card section-pad p-5 sm:p-7 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div><label class="lbl">تاریخ</label><div class="relative"><input type="text" id="log-date" class="fld jdate" readonly onclick="openPicker(this)" placeholder="انتخاب تاریخ"><i class="fa-regular fa-calendar pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bark-500"></i></div></div>
+      <div><label class="lbl">نام ماشین</label><select id="log-machine" class="fld"></select></div>
+      <div><label class="lbl">نام راننده</label><input type="text" id="log-driver" placeholder="نام راننده" class="fld"></div>
+      <div><label class="lbl">عدد ساعت‌کارِ شروع</label><input type="number" id="log-start" min="0" step="any" class="fld"></div>
+      <div><label class="lbl">عدد ساعت‌کارِ پایان</label><input type="number" id="log-end" min="0" step="any" class="fld"></div>
+      <div><label class="lbl">دسته‌بندی رویداد</label><select id="log-cat" class="fld"><option>⛽ سوخت‌گیری</option><option>🧽 نظافت</option><option>🛠 سرویس دوره‌ای</option><option>⚠️ خرابی/حادثه</option><option>🚜 کار در مزرعه</option></select></div>
+      <div class="sm:col-span-2"><label class="lbl">شرح جزئیات</label><input type="text" id="log-details" placeholder="توضیحات رویداد" class="fld"></div>
+      <div><label class="lbl">هزینه / مصرف</label><input type="text" id="log-cost" placeholder="مثلاً ۴۰ لیتر یا ۲ میلیون تومان" class="fld"></div>
+    </div>
+    <div class="mt-6"><button onclick="addLog()" class="btn btn-brown btn-inline px-6 py-3"><i class="fa-solid fa-plus"></i> ثبت رویداد ماشین</button></div>
+  </div>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto"><table class="data-table w-full text-sm text-right whitespace-nowrap"><thead class="bg-bark-700 text-white"><tr><th class="px-4 py-3">تاریخ</th><th class="px-4 py-3">ماشین</th><th class="px-4 py-3">راننده</th><th class="px-4 py-3">شروع</th><th class="px-4 py-3">پایان</th><th class="px-4 py-3">کارکرد مفید</th><th class="px-4 py-3">رویداد</th><th class="px-4 py-3">جزئیات</th><th class="px-4 py-3">هزینه</th><th class="px-4 py-3">همگام‌سازی</th><th class="px-4 py-3">حذف</th></tr></thead><tbody id="log-tbody" class="divide-y divide-sand-200"></tbody></table></div>
+    <div id="log-empty" class="text-center text-bark-500 py-8 text-sm">هنوز رویدادی ثبت نشده است.</div>
+  </div>
+</section>
+
+<section id="pane-irr" class="tab-pane hidden">
+  <div class="banner b-irr"><div class="deco d1"></div><div class="deco d2"></div><svg class="banner-art" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg"><g fill="#ffffff"><path d="M50 30 C50 60 30 70 30 92 a20 20 0 0 0 40 0 C70 70 50 60 50 30Z"/><path d="M105 70 C105 95 90 103 90 120 a15 15 0 0 0 30 0 C120 103 105 95 105 70Z"/></g></svg><i class="banner-bgicon fa-solid fa-droplet"></i><div class="banner-txt"><h2><i class="fa-solid fa-droplet"></i> ماتریس آبیاری (۲۰۰ آبریز)</h2><p>ثبت و بایگانی آبیاری به‌تفکیک هر روز</p></div><div class="banner-icon"><i class="fa-solid fa-droplet"></i></div></div>
+  <div class="card section-pad p-5 sm:p-7 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+      <div><label class="lbl">تاریخ</label><div class="relative"><input type="text" id="irr-date" class="fld jdate" readonly onclick="openPicker(this)" placeholder="انتخاب تاریخ"><i class="fa-regular fa-calendar pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bark-500"></i></div></div>
+      <div><label class="lbl">نام آبدار شیفت</label><input type="text" id="irr-worker" list="workers-list" placeholder="نام آبدار" class="fld"></div>
+    </div>
+    <div class="bg-water-500/10 border border-water-500/30 rounded-xl p-4 mb-5">
+      <div class="flex flex-wrap items-end gap-3">
+        <div><label class="block text-xs font-semibold mb-1 text-water-700">از آبریز</label><input type="number" id="range-from" min="1" max="200" placeholder="۱۰" class="w-24 rounded-lg border border-sand-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-water-500"></div>
+        <div><label class="block text-xs font-semibold mb-1 text-water-700">تا آبریز</label><input type="number" id="range-to" min="1" max="200" placeholder="۵۰" class="w-24 rounded-lg border border-sand-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-water-500"></div>
+        <button onclick="applyRange()" class="btn btn-water btn-inline px-5 py-2.5"><i class="fa-solid fa-fill-drip"></i> انتخاب بازه‌ای</button>
+        <button onclick="clearAll()" class="btn btn-soft btn-inline px-5 py-2.5"><i class="fa-solid fa-eraser"></i> پاک کردن</button>
+        <div class="mr-auto text-sm font-semibold text-water-700 flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-water-500/30"><i class="fa-solid fa-droplet"></i> آبیاری‌شده: <span id="irr-count">۰</span> / ۲۰۰</div>
+      </div>
+    </div>
+    <div id="irr-grid" class="irrigation-grid mb-6"></div>
+    <div class="flex flex-col sm:flex-row gap-3">
+      <button onclick="saveIrrDay()" class="btn btn-green py-4 flex-1 text-lg"><i class="fa-solid fa-floppy-disk"></i> ثبت / به‌روزرسانی آبیاری این روز</button>
+    </div>
+  </div>
+  <div class="card overflow-hidden">
+    <div class="px-5 pt-5 pb-2 flex items-center justify-between flex-wrap gap-3"><h3 class="font-bold text-water-700 flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left"></i> بایگانی روزهای آبیاری</h3></div>
+    <div class="overflow-x-auto"><table class="data-table w-full text-sm text-right whitespace-nowrap"><thead class="bg-bark-700 text-white"><tr><th class="px-4 py-3">تاریخ</th><th class="px-4 py-3">آبدار</th><th class="px-4 py-3">تعداد آبیاری‌شده</th><th class="px-4 py-3">نمایش</th><th class="px-4 py-3">همگام‌سازی</th><th class="px-4 py-3">حذف</th></tr></thead><tbody id="irr-hist-tbody" class="divide-y divide-sand-200"></tbody></table></div>
+    <div id="irr-hist-empty" class="text-center text-bark-500 py-8 text-sm">هنوز روزی بایگانی نشده است.</div>
+  </div>
+</section>
+
+<section id="pane-spray" class="tab-pane hidden">
+  <div class="banner b-spray"><div class="deco d1"></div><div class="deco d2"></div><i class="banner-bgicon fa-solid fa-spray-can-sparkles"></i><div class="banner-txt"><h2><i class="fa-solid fa-spray-can-sparkles"></i> دفتر کود و سم‌پاشی</h2><p>ثبت عملیات تغذیه و مبارزه با آفات به‌تفکیک باغ</p></div><div class="banner-icon"><i class="fa-solid fa-spray-can-sparkles"></i></div></div>
+  <div class="card section-pad p-5 sm:p-7 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div><label class="lbl">تاریخ</label><div class="relative"><input type="text" id="spray-date" class="fld jdate" readonly onclick="openPicker(this)" placeholder="انتخاب تاریخ"><i class="fa-regular fa-calendar pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bark-500"></i></div></div>
+      <div><label class="lbl">باغ / محدوده</label><select id="spray-garden" class="fld"></select></div>
+      <div><label class="lbl">نوع عملیات</label><select id="spray-op" class="fld"></select></div>
+      <div><label class="lbl">نام کود / سم</label><input type="text" id="spray-material" placeholder="مثلاً کود اوره، آبامکتین" class="fld"></div>
+      <div><label class="lbl">مقدار / دوز مصرف</label><input type="text" id="spray-dose" placeholder="مثلاً ۲ لیتر در ۱۰۰۰ لیتر آب" class="fld"></div>
+      <div><label class="lbl">آفت / هدف</label><input type="text" id="spray-target" placeholder="مثلاً کنه تارتن، تقویت" class="fld"></div>
+      <div><label class="lbl">اپراتور / سم‌پاش‌زن</label><input type="text" id="spray-operator" list="workers-list" placeholder="نام اپراتور" class="fld"></div>
+      <div class="sm:col-span-2"><label class="lbl">توضیحات</label><input type="text" id="spray-note" placeholder="توضیحات اختیاری" class="fld"></div>
+    </div>
+    <div class="mt-6"><button onclick="addSpray()" class="btn btn-green btn-inline px-6 py-3"><i class="fa-solid fa-plus"></i> ثبت عملیات</button></div>
+  </div>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto"><table class="data-table w-full text-sm text-right whitespace-nowrap"><thead class="bg-bark-700 text-white"><tr><th class="px-4 py-3">تاریخ</th><th class="px-4 py-3">باغ</th><th class="px-4 py-3">عملیات</th><th class="px-4 py-3">کود/سم</th><th class="px-4 py-3">دوز</th><th class="px-4 py-3">آفت/هدف</th><th class="px-4 py-3">اپراتور</th><th class="px-4 py-3">همگام‌سازی</th><th class="px-4 py-3">حذف</th></tr></thead><tbody id="spray-tbody" class="divide-y divide-sand-200"></tbody></table></div>
+    <div id="spray-empty" class="text-center text-bark-500 py-8 text-sm">هنوز عملیاتی ثبت نشده است.</div>
+  </div>
+</section>
+
+<section id="pane-orchard" class="tab-pane hidden">
+  <div class="banner b-orchard"><div class="deco d1"></div><div class="deco d2"></div><svg class="banner-art" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg"><g fill="#ffffff"><rect x="76" y="70" width="8" height="120" rx="4"/><path d="M80 70 Q40 55 8 64 Q44 72 80 78Z"/><path d="M80 70 Q120 55 152 64 Q116 72 80 78Z"/><path d="M80 66 Q52 40 30 18 Q62 40 80 74Z"/><path d="M80 66 Q108 40 130 18 Q98 40 80 74Z"/><path d="M80 64 Q78 34 80 6 Q82 34 80 70Z"/></g></svg><i class="banner-bgicon fa-solid fa-tree"></i><div class="banner-txt"><h2><i class="fa-solid fa-tree"></i> امورات باغی (۲۰ باغ)</h2><p>کارهای مرسوم نخلستان از گرده‌افشانی تا برداشت</p></div><div class="banner-icon"><i class="fa-solid fa-tree"></i></div></div>
+  <div class="card section-pad p-5 sm:p-7 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div><label class="lbl">تاریخ</label><div class="relative"><input type="text" id="orchard-date" class="fld jdate" readonly onclick="openPicker(this)" placeholder="انتخاب تاریخ"><i class="fa-regular fa-calendar pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bark-500"></i></div></div>
+      <div><label class="lbl">باغ</label><select id="orchard-garden" class="fld"></select></div>
+      <div><label class="lbl">نوع کار</label><select id="orchard-task" class="fld"></select></div>
+      <div><label class="lbl">کارگر / مسئول</label><input type="text" id="orchard-worker" list="workers-list" placeholder="نام کارگر" class="fld"></div>
+      <div><label class="lbl">تعداد نخل / مقدار</label><input type="number" id="orchard-count" min="0" step="any" placeholder="اختیاری" class="fld"></div>
+      <div><label class="lbl">وضعیت</label><select id="orchard-status" class="fld"><option>انجام شد</option><option>در حال انجام</option><option>برنامه‌ریزی شده</option></select></div>
+      <div class="sm:col-span-3"><label class="lbl">توضیحات</label><input type="text" id="orchard-note" placeholder="توضیحات اختیاری" class="fld"></div>
+    </div>
+    <div class="mt-6"><button onclick="addOrchard()" class="btn btn-green btn-inline px-6 py-3"><i class="fa-solid fa-plus"></i> ثبت کار باغی</button></div>
+  </div>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto"><table class="data-table w-full text-sm text-right whitespace-nowrap"><thead class="bg-bark-700 text-white"><tr><th class="px-4 py-3">تاریخ</th><th class="px-4 py-3">باغ</th><th class="px-4 py-3">نوع کار</th><th class="px-4 py-3">کارگر</th><th class="px-4 py-3">تعداد</th><th class="px-4 py-3">وضعیت</th><th class="px-4 py-3">توضیحات</th><th class="px-4 py-3">همگام‌سازی</th><th class="px-4 py-3">حذف</th></tr></thead><tbody id="orchard-tbody" class="divide-y divide-sand-200"></tbody></table></div>
+    <div id="orchard-empty" class="text-center text-bark-500 py-8 text-sm">هنوز کاری ثبت نشده است.</div>
+  </div>
+</section>
+
+<section id="pane-inv" class="tab-pane hidden">
+  <div class="banner b-inv"><div class="deco d1"></div><div class="deco d2"></div><i class="banner-bgicon fa-solid fa-boxes-stacked"></i><div class="banner-txt"><h2><i class="fa-solid fa-boxes-stacked"></i> دفتر انبارداری</h2><p>ثبت ورود/خروج اقلام و موجودی برآوردی انبار</p></div><div class="banner-icon"><i class="fa-solid fa-boxes-stacked"></i></div></div>
+  <div class="card section-pad p-5 sm:p-7 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div><label class="lbl">تاریخ</label><div class="relative"><input type="text" id="inv-date" class="fld jdate" readonly onclick="openPicker(this)" placeholder="انتخاب تاریخ"><i class="fa-regular fa-calendar pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bark-500"></i></div></div>
+      <div><label class="lbl">نام کالا</label><input type="text" id="inv-item" placeholder="مثلاً کود اوره، نایلون، بذر" class="fld"></div>
+      <div><label class="lbl">نوع تراکنش</label><select id="inv-type" class="fld"><option value="ورود">📥 ورود به انبار</option><option value="خروج">📤 خروج از انبار</option></select></div>
+      <div><label class="lbl">مقدار</label><input type="number" id="inv-qty" min="0" step="any" placeholder="مقدار" class="fld"></div>
+      <div><label class="lbl">واحد</label><select id="inv-unit" class="fld"><option>کیلوگرم</option><option>عدد</option><option>لیتر</option><option>کیسه</option><option>متر</option><option>تن</option></select></div>
+      <div><label class="lbl">تحویل‌دهنده / گیرنده</label><input type="text" id="inv-party" placeholder="نام شخص یا تأمین‌کننده" class="fld"></div>
+      <div class="sm:col-span-3"><label class="lbl">توضیحات</label><input type="text" id="inv-desc" placeholder="توضیحات اختیاری" class="fld"></div>
+    </div>
+    <div class="mt-6"><button onclick="addInv()" class="btn btn-green btn-inline px-6 py-3"><i class="fa-solid fa-plus"></i> ثبت تراکنش انبار</button></div>
+  </div>
+  <div class="card p-5 mb-6"><h3 class="font-bold text-bark-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-warehouse text-gold-600"></i> موجودی برآوردی انبار</h3><div id="inv-balance" class="flex flex-wrap gap-2 text-sm"></div></div>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto"><table class="data-table w-full text-sm text-right whitespace-nowrap"><thead class="bg-bark-700 text-white"><tr><th class="px-4 py-3">تاریخ</th><th class="px-4 py-3">کالا</th><th class="px-4 py-3">نوع</th><th class="px-4 py-3">مقدار</th><th class="px-4 py-3">واحد</th><th class="px-4 py-3">طرف</th><th class="px-4 py-3">توضیحات</th><th class="px-4 py-3">همگام‌سازی</th><th class="px-4 py-3">حذف</th></tr></thead><tbody id="inv-tbody" class="divide-y divide-sand-200"></tbody></table></div>
+    <div id="inv-empty" class="text-center text-bark-500 py-8 text-sm">هنوز تراکنشی ثبت نشده است.</div>
+  </div>
+</section>
+
+<section id="pane-acc" class="tab-pane hidden">
+  <div class="banner b-acc"><div class="deco d1"></div><div class="deco d2"></div><i class="banner-bgicon fa-solid fa-wallet"></i><div class="banner-txt"><h2><i class="fa-solid fa-wallet"></i> دفتر حسابداری</h2><p>ثبت درآمد و هزینه و محاسبه‌ی سود/زیان</p></div><div class="banner-icon"><i class="fa-solid fa-wallet"></i></div></div>
+  <div class="card section-pad p-5 sm:p-7 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div><label class="lbl">تاریخ</label><div class="relative"><input type="text" id="acc-date" class="fld jdate" readonly onclick="openPicker(this)" placeholder="انتخاب تاریخ"><i class="fa-regular fa-calendar pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bark-500"></i></div></div>
+      <div><label class="lbl">نوع تراکنش</label><select id="acc-type" class="fld"><option value="درآمد">💵 درآمد</option><option value="هزینه">🧾 هزینه</option></select></div>
+      <div><label class="lbl">دسته‌بندی</label><select id="acc-cat" class="fld"><option>فروش محصول</option><option>دستمزد و حقوق</option><option>خرید کود و سم</option><option>خرید بذر و نهال</option><option>سوخت</option><option>تعمیر و قطعات</option><option>اجاره و کرایه</option><option>حمل‌ونقل</option><option>سایر</option></select></div>
+      <div><label class="lbl">مبلغ (تومان)</label><input type="number" id="acc-amount" min="0" placeholder="مبلغ" class="fld"></div>
+      <div><label class="lbl">طرف حساب</label><input type="text" id="acc-party" placeholder="نام شخص/شرکت" class="fld"></div>
+      <div class="sm:col-span-2 lg:col-span-1"><label class="lbl">شرح</label><input type="text" id="acc-desc" placeholder="شرح تراکنش" class="fld"></div>
+    </div>
+    <div class="mt-6"><button onclick="addAcc()" class="btn btn-green btn-inline px-6 py-3"><i class="fa-solid fa-plus"></i> ثبت تراکنش مالی</button></div>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-leaf-500/10 border border-leaf-500/30 rounded-2xl p-5"><div class="text-sm text-leaf-700 font-semibold mb-1"><i class="fa-solid fa-arrow-trend-up"></i> مجموع درآمد</div><div id="acc-income" class="text-2xl font-extrabold text-leaf-700">۰ تومان</div></div>
+    <div class="bg-red-500/10 border border-red-500/30 rounded-2xl p-5"><div class="text-sm text-red-600 font-semibold mb-1"><i class="fa-solid fa-arrow-trend-down"></i> مجموع هزینه</div><div id="acc-expense" class="text-2xl font-extrabold text-red-600">۰ تومان</div></div>
+    <div class="bg-bark-700/10 border border-bark-700/30 rounded-2xl p-5"><div class="text-sm text-bark-700 font-semibold mb-1"><i class="fa-solid fa-scale-balanced"></i> مانده (سود/زیان)</div><div id="acc-balance" class="text-2xl font-extrabold text-bark-700">۰ تومان</div></div>
+  </div>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto"><table class="data-table w-full text-sm text-right whitespace-nowrap"><thead class="bg-bark-700 text-white"><tr><th class="px-4 py-3">تاریخ</th><th class="px-4 py-3">نوع</th><th class="px-4 py-3">دسته</th><th class="px-4 py-3">شرح</th><th class="px-4 py-3">طرف حساب</th><th class="px-4 py-3">مبلغ</th><th class="px-4 py-3">همگام‌سازی</th><th class="px-4 py-3">حذف</th></tr></thead><tbody id="acc-tbody" class="divide-y divide-sand-200"></tbody></table></div>
+    <div id="acc-empty" class="text-center text-bark-500 py-8 text-sm">هنوز تراکنشی ثبت نشده است.</div>
+  </div>
+</section>
+
+<section id="pane-harv" class="tab-pane hidden">
+  <div class="banner b-harv"><div class="deco d1"></div><div class="deco d2"></div><i class="banner-bgicon fa-solid fa-wheat-awn"></i><div class="banner-txt"><h2><i class="fa-solid fa-wheat-awn"></i> برداشت و فروش محصول</h2><p>ثبت برداشت، فروش و درآمد محصولات نخلستان</p></div><div class="banner-icon"><i class="fa-solid fa-wheat-awn"></i></div></div>
+  <div class="card section-pad p-5 sm:p-7 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div><label class="lbl">تاریخ</label><div class="relative"><input type="text" id="harv-date" class="fld jdate" readonly onclick="openPicker(this)" placeholder="انتخاب تاریخ"><i class="fa-regular fa-calendar pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bark-500"></i></div></div>
+      <div><label class="lbl">نوع محصول</label><select id="harv-product" class="fld"><option>خرما</option><option>رطب</option><option>خارک</option><option>محصول جانبی</option><option>سایر</option></select></div>
+      <div><label class="lbl">مقدار برداشت (کیلوگرم)</label><input type="number" id="harv-harvested" min="0" step="any" placeholder="کیلوگرم" class="fld"></div>
+      <div><label class="lbl">مقدار فروش (کیلوگرم)</label><input type="number" id="harv-sold" min="0" step="any" placeholder="کیلوگرم" class="fld"></div>
+      <div><label class="lbl">قیمت واحد (تومان/کیلو)</label><input type="number" id="harv-price" min="0" placeholder="تومان" class="fld"></div>
+      <div><label class="lbl">خریدار</label><input type="text" id="harv-buyer" placeholder="نام خریدار" class="fld"></div>
+      <div class="sm:col-span-2 lg:col-span-3"><label class="lbl">توضیحات</label><input type="text" id="harv-note" placeholder="توضیحات اختیاری" class="fld"></div>
+    </div>
+    <div class="mt-6"><button onclick="addHarv()" class="btn btn-green btn-inline px-6 py-3"><i class="fa-solid fa-plus"></i> ثبت برداشت/فروش</button></div>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-gold-500/10 border border-gold-500/30 rounded-2xl p-5"><div class="text-sm text-gold-700 font-semibold mb-1"><i class="fa-solid fa-basket-shopping"></i> مجموع برداشت</div><div id="harv-total-h" class="text-2xl font-extrabold text-gold-700">۰ کیلوگرم</div></div>
+    <div class="bg-water-500/10 border border-water-500/30 rounded-2xl p-5"><div class="text-sm text-water-700 font-semibold mb-1"><i class="fa-solid fa-truck-fast"></i> مجموع فروش</div><div id="harv-total-s" class="text-2xl font-extrabold text-water-700">۰ کیلوگرم</div></div>
+    <div class="bg-leaf-500/10 border border-leaf-500/30 rounded-2xl p-5"><div class="text-sm text-leaf-700 font-semibold mb-1"><i class="fa-solid fa-sack-dollar"></i> درآمد فروش</div><div id="harv-total-r" class="text-2xl font-extrabold text-leaf-700">۰ تومان</div></div>
+  </div>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto"><table class="data-table w-full text-sm text-right whitespace-nowrap"><thead class="bg-bark-700 text-white"><tr><th class="px-4 py-3">تاریخ</th><th class="px-4 py-3">محصول</th><th class="px-4 py-3">برداشت</th><th class="px-4 py-3">فروش</th><th class="px-4 py-3">قیمت واحد</th><th class="px-4 py-3">مبلغ کل</th><th class="px-4 py-3">خریدار</th><th class="px-4 py-3">همگام‌سازی</th><th class="px-4 py-3">حذف</th></tr></thead><tbody id="harv-tbody" class="divide-y divide-sand-200"></tbody></table></div>
+    <div id="harv-empty" class="text-center text-bark-500 py-8 text-sm">هنوز رکوردی ثبت نشده است.</div>
+  </div>
+</section>
+
+<section id="pane-sheep" class="tab-pane hidden">
+  <div class="banner b-sheep"><div class="deco d1"></div><div class="deco d2"></div><i class="banner-bgicon fa-solid fa-paw"></i><div class="banner-txt"><h2><i class="fa-solid fa-paw"></i> دفتر پرورش گوسفند</h2><p>ثبت تولد، تلفات، خریدوفروش و رویدادهای دامداری</p></div><div class="banner-icon"><i class="fa-solid fa-paw"></i></div></div>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-gold-500/10 border border-gold-500/30 rounded-2xl p-5"><div class="text-sm text-gold-700 font-semibold mb-1"><i class="fa-solid fa-paw"></i> تعداد کل دام زنده (برآوردی)</div><div id="sheep-total" class="text-2xl font-extrabold text-gold-700">۰</div></div>
+    <div class="bg-leaf-500/10 border border-leaf-500/30 rounded-2xl p-5"><div class="text-sm text-leaf-700 font-semibold mb-1"><i class="fa-solid fa-cake-candles"></i> کل تولدها</div><div id="sheep-births" class="text-2xl font-extrabold text-leaf-700">۰</div></div>
+    <div class="bg-red-500/10 border border-red-500/30 rounded-2xl p-5"><div class="text-sm text-red-600 font-semibold mb-1"><i class="fa-solid fa-skull"></i> کل تلفات</div><div id="sheep-deaths" class="text-2xl font-extrabold text-red-600">۰</div></div>
+  </div>
+  <div class="card section-pad p-5 sm:p-7 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div><label class="lbl">تاریخ</label><div class="relative"><input type="text" id="sheep-date" class="fld jdate" readonly onclick="openPicker(this)" placeholder="انتخاب تاریخ"><i class="fa-regular fa-calendar pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bark-500"></i></div></div>
+      <div><label class="lbl">دسته‌بندی</label><select id="sheep-cat" class="fld"></select></div>
+      <div><label class="lbl">تعداد</label><input type="number" id="sheep-count" min="0" step="1" placeholder="تعداد رأس" class="fld"></div>
+      <div><label class="lbl">مبلغ مالی (تومان) <span class="text-bark-500 font-normal text-xs">(اختیاری)</span></label><input type="number" id="sheep-amount" min="0" placeholder="اختیاری" class="fld"></div>
+      <div><label class="lbl">مسئول</label><input type="text" id="sheep-person" list="workers-list" placeholder="نام مسئول" class="fld"></div>
+      <div class="sm:col-span-2 lg:col-span-3"><label class="lbl">توضیحات</label><input type="text" id="sheep-desc" placeholder="توضیحات اختیاری" class="fld"></div>
+    </div>
+    <div class="mt-6"><button onclick="addSheep()" class="btn btn-green btn-inline px-6 py-3"><i class="fa-solid fa-plus"></i> ثبت رویداد دامداری</button></div>
+  </div>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto"><table class="data-table w-full text-sm text-right whitespace-nowrap"><thead class="bg-bark-700 text-white"><tr><th class="px-4 py-3">تاریخ</th><th class="px-4 py-3">دسته‌بندی</th><th class="px-4 py-3">تعداد</th><th class="px-4 py-3">مبلغ</th><th class="px-4 py-3">مسئول</th><th class="px-4 py-3">توضیحات</th><th class="px-4 py-3">همگام‌سازی</th><th class="px-4 py-3">حذف</th></tr></thead><tbody id="sheep-tbody" class="divide-y divide-sand-200"></tbody></table></div>
+    <div id="sheep-empty" class="text-center text-bark-500 py-8 text-sm">هنوز رکوردی ثبت نشده است.</div>
+  </div>
+</section>
+
+<section id="pane-security" class="tab-pane hidden">
+  <div class="banner b-sec"><div class="deco d1"></div><div class="deco d2"></div><i class="banner-bgicon fa-solid fa-shield-halved"></i><div class="banner-txt"><h2><i class="fa-solid fa-shield-halved"></i> امنیت و تردد</h2><p>ثبت حوادث، بازدیدها و تردد غیرعادی در محدوده مزرعه</p></div><div class="banner-icon"><i class="fa-solid fa-shield-halved"></i></div></div>
+  <div class="card p-5 mb-6"><div class="text-sm text-slate-700 font-semibold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> کل حوادث ثبت‌شده امنیت</div><div id="sec-total" class="text-2xl font-extrabold text-slate-700">۰</div></div>
+  <div class="card section-pad p-5 sm:p-7 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div><label class="lbl">تاریخ</label><div class="relative"><input type="text" id="sec-date" class="fld jdate" readonly onclick="openPicker(this)" placeholder="انتخاب تاریخ"><i class="fa-regular fa-calendar pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bark-500"></i></div></div>
+      <div><label class="lbl">نوع حادثه</label><select id="sec-type" class="fld"></select></div>
+      <div><label class="lbl">عنوان</label><input type="text" id="sec-title" placeholder="عنوان مختصر حادثه" class="fld"></div>
+      <div class="sm:col-span-2 lg:col-span-3"><label class="lbl">شرح کامل</label><textarea id="sec-desc" rows="2" placeholder="شرح جزئیات حادثه..." class="fld resize-none"></textarea></div>
+      <div><label class="lbl">شناسایی افراد</label><select id="sec-identified" class="fld"></select></div>
+      <div><label class="lbl">اقدام انجام‌شده</label><select id="sec-action" class="fld"></select></div>
+      <div><label class="lbl">گزارش‌دهنده / ناظر</label><input type="text" id="sec-reporter" list="workers-list" placeholder="نام گزارش‌دهنده" class="fld"></div>
+    </div>
+    <div class="mt-6"><button onclick="addSecurity()" class="btn btn-brown btn-inline px-6 py-3"><i class="fa-solid fa-plus"></i> ثبت رویداد امنیتی</button></div>
+  </div>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto"><table class="data-table w-full text-sm text-right whitespace-nowrap"><thead class="bg-bark-700 text-white"><tr><th class="px-4 py-3">تاریخ</th><th class="px-4 py-3">نوع</th><th class="px-4 py-3">عنوان</th><th class="px-4 py-3">شرح</th><th class="px-4 py-3">شناسایی</th><th class="px-4 py-3">اقدام</th><th class="px-4 py-3">گزارش‌دهنده</th><th class="px-4 py-3">همگام‌سازی</th><th class="px-4 py-3">حذف</th></tr></thead><tbody id="sec-tbody" class="divide-y divide-sand-200"></tbody></table></div>
+    <div id="sec-empty" class="text-center text-bark-500 py-8 text-sm">هنوز رکوردی ثبت نشده است.</div>
+  </div>
+</section>
+
+<section id="pane-rep" class="tab-pane hidden">
+  <div class="banner b-rep"><div class="deco d1"></div><div class="deco d2"></div><i class="banner-bgicon fa-solid fa-clipboard-list"></i><div class="banner-txt"><h2><i class="fa-solid fa-clipboard-list"></i> گزارش مدیریتی</h2><p>جمع‌بندی همه‌ی دفاتر و تولید گزارش آماده برای مدیریت</p></div><div class="banner-icon"><i class="fa-solid fa-clipboard-list"></i></div></div>
+  <div class="card section-pad p-5 sm:p-7">
+    <p class="text-sm text-bark-500 mb-5">دوره و تاریخ مرجع را انتخاب کنید؛ سامانه اطلاعات همه‌ی دفاتر را در آن بازه جمع‌بندی کرده و یک متن گزارشِ آماده برای ارسال به مدیریت تولید می‌کند.</p>
+    <div class="flex flex-wrap items-end gap-3 mb-5">
+      <div><label class="lbl">دوره گزارش</label><select id="rep-period" class="fld"><option value="daily">روزانه</option><option value="weekly">هفتگی</option><option value="monthly">ماهیانه</option><option value="yearly">سالیانه</option></select></div>
+      <div><label class="lbl">تاریخ مرجع</label><div class="relative"><input type="text" id="rep-date" class="fld jdate" readonly onclick="openPicker(this)" placeholder="انتخاب تاریخ"><i class="fa-regular fa-calendar pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-bark-500"></i></div></div>
+      <button onclick="buildReport()" class="btn btn-brown btn-inline px-6 py-3"><i class="fa-solid fa-gears"></i> تولید گزارش</button>
+    </div>
+    <textarea id="rep-text" rows="22" class="w-full rounded-2xl border border-sand-300 bg-sand-50 p-4 leading-7 text-sm outline-none focus:ring-2 focus:ring-leaf-500" placeholder="متن گزارش پس از تولید اینجا نمایش داده می‌شود..."></textarea>
+    <div class="flex flex-wrap gap-3 mt-4">
+      <button onclick="copyReport()" class="btn btn-brown btn-inline px-5 py-3"><i class="fa-solid fa-copy"></i> کپی متن</button>
+      <button onclick="shareWhatsApp()" class="btn btn-inline px-5 py-3 text-white" style="background:#25D366"><i class="fa-brands fa-whatsapp"></i> واتس‌اپ</button>
+      <button onclick="shareTelegram()" class="btn btn-inline px-5 py-3 text-white" style="background:#229ED9"><i class="fa-brands fa-telegram"></i> تلگرام</button>
+      <button onclick="downloadReportTxt()" class="btn btn-soft btn-inline px-5 py-3"><i class="fa-solid fa-download"></i> دانلود متن</button>
+    </div>
+  </div>
+
+  <div class="card section-pad p-5 sm:p-7 mt-6">
+    <h3 class="font-bold text-bark-700 mb-2 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass-chart text-leaf-600"></i> مرکز استعلامات و آنالیز پویا</h3>
+    <p class="text-sm text-bark-500 mb-4">استعلام دقیق حضور/غیبت کارگران و کارکرد ماشین‌آلات در هر بازه دلخواه.</p>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div class="qcard">
+        <h4 class="font-bold text-leaf-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-user-check"></i> استعلام حضور و غیبت کارگر</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div class="sm:col-span-2"><label class="lbl">نام کارگر</label><input type="text" id="q-att-worker" list="workers-list" placeholder="انتخاب یا تایپ نام کارگر" class="fld"></div>
+          <div><label class="lbl">از تاریخ</label><div class="relative"><input type="text" id="q-att-from" class="fld jdate" readonly onclick="openPicker(this)" placeholder="از تاریخ"></div></div>
+          <div><label class="lbl">تا تاریخ</label><div class="relative"><input type="text" id="q-att-to" class="fld jdate" readonly onclick="openPicker(this)" placeholder="تا تاریخ"></div></div>
+          <div class="sm:col-span-2"><label class="flex items-center gap-2 cursor-pointer text-sm"><input type="checkbox" id="q-att-nofri" class="accent-leaf-600"> عدم احتساب روزهای جمعه از غیبت</label></div>
+        </div>
+        <button onclick="runAttendanceQuery()" class="btn btn-green btn-inline px-5 py-2.5"><i class="fa-solid fa-magnifying-glass"></i> اجرای استعلام</button>
+        <div id="q-att-result" class="mt-4"></div>
+      </div>
+      <div class="qcard">
+        <h4 class="font-bold text-water-700 mb-3 flex items-center gap-2"><i class="fa-solid fa-tractor"></i> استعلام کارکرد ماشین‌آلات</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div class="sm:col-span-2"><label class="lbl">نام ماشین</label><select id="q-mach-name" class="fld"></select></div>
+          <div><label class="lbl">از تاریخ</label><div class="relative"><input type="text" id="q-mach-from" class="fld jdate" readonly onclick="openPicker(this)" placeholder="از تاریخ"></div></div>
+          <div><label class="lbl">تا تاریخ</label><div class="relative"><input type="text" id="q-mach-to" class="fld jdate" readonly onclick="openPicker(this)" placeholder="تا تاریخ"></div></div>
+        </div>
+        <button onclick="runMachineryQuery()" class="btn btn-water btn-inline px-5 py-2.5"><i class="fa-solid fa-magnifying-glass"></i> اجرای استعلام</button>
+        <div id="q-mach-result" class="mt-4"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card section-pad p-5 sm:p-7 mt-6">
+    <h3 class="font-bold text-bark-700 mb-2 flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up text-water-600"></i> همگام‌سازی ابری با گوگل شیت</h3>
+    <p class="text-sm text-bark-500 mb-4">آدرس وب‌اپلیکیشن گوگل (Apps Script) را برای همگام‌سازی خودکار و پشتیبان ابری ثبت کنید. راهنمای کامل ساخت آن در پایین کد منبع همین فایل موجود است.</p>
+    <div class="flex flex-wrap items-end gap-3 mb-4">
+      <div class="flex-1 min-w-[260px]"><label class="lbl">آدرس وب‌اپلیکیشن گوگل</label><input type="text" id="gs-url" placeholder="https://script.google.com/macros/s/XXXX/exec" class="fld" dir="ltr"></div>
+      <button onclick="saveScriptUrl()" class="btn btn-brown btn-inline px-5 py-3"><i class="fa-solid fa-floppy-disk"></i> ذخیره آدرس</button>
+      <button onclick="syncPendingAll()" class="btn btn-water btn-inline px-5 py-3"><i class="fa-solid fa-rotate"></i> همگام‌سازی داده‌های معلق</button>
+    </div>
+    <div class="text-sm text-bark-600">رکوردهای در انتظار همگام‌سازی: <span id="sync-pending-count" class="font-extrabold text-gold-700">۰</span></div>
+  </div>
+
+  <div class="card section-pad p-5 sm:p-7 mt-6">
+    <h3 class="font-bold text-bark-700 mb-2 flex items-center gap-2"><i class="fa-solid fa-file-excel text-leaf-600"></i> خروجی اکسل جامع کل مزرعه</h3>
+    <p class="text-sm text-bark-500 mb-4">یک فایل اکسل شامل ۱۰ برگه (به‌تفکیک هر دفتر) تولید می‌شود.</p>
+    <div class="flex flex-wrap items-center gap-4 mb-4 bg-sand-50 border border-sand-300 rounded-xl px-3 py-2.5">
+      <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="export-scope" value="all" class="accent-leaf-600" checked> خروجی کل تاریخچه</label>
+      <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="export-scope" value="period" class="accent-leaf-600"> خروجی بازه زمانی انتخابی (دوره/تاریخ بالا)</label>
+    </div>
+    <button onclick="exportConsolidatedExcel()" class="btn btn-green btn-inline px-6 py-3"><i class="fa-solid fa-file-excel"></i> دانلود فایل اکسل جامع کل مزرعه</button>
+  </div>
+
+  <div class="card section-pad p-5 sm:p-7 mt-6">
+    <h3 class="font-bold text-bark-700 mb-2 flex items-center gap-2"><i class="fa-solid fa-database text-leaf-600"></i> مدیریت و پشتیبان‌گیری داده‌ها</h3>
+    <p class="text-sm text-bark-500 mb-4">اطلاعات همه‌ی دفاتر به‌صورت خودکار روی همین دستگاه (IndexedDB) ذخیره می‌شود. برای انتقال به دستگاه دیگر یا نگهداری بلندمدت از فایل پشتیبان استفاده کنید.</p>
+    <div class="flex flex-wrap gap-3">
+      <button onclick="backupJSON()" class="btn btn-brown btn-inline px-5 py-3"><i class="fa-solid fa-floppy-disk"></i> دانلود فایل پشتیبان</button>
+      <label class="btn btn-green btn-inline px-5 py-3 cursor-pointer"><i class="fa-solid fa-upload"></i> بازیابی از فایل<input type="file" accept=".json,application/json" class="hidden" onchange="restoreJSON(this)"></label>
+      <button onclick="clearData()" class="btn btn-red btn-inline px-5 py-3"><i class="fa-solid fa-trash-can"></i> پاک کردن همه</button>
+    </div>
+  </div>
+</section>
+</main><footer class="text-center text-bark-500 text-xs py-6">سامانه مدیریت مزرعه حسین‌آباد شهکل · شهرستان ریگان</footer><div id="jdp" class="jdp hidden"><div class="jdp-head"><button class="jdp-nav" onclick="navMonth(-1)">‹</button><span id="jdp-title"></span><button class="jdp-nav" onclick="navMonth(1)">›</button></div><div class="jdp-week"><span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span></div><div id="jdp-grid" class="jdp-grid"></div><div class="jdp-foot"><button onclick="pickToday()">امروز</button></div></div><div id="toast"></div><script>
+/* ===== تبدیل تاریخ جلالی (jalaali-js, MIT) ===== */
+function div(a,b){return Math.trunc(a/b);}
+function jalCal(jy){var breaks=[-61,9,38,199,426,686,756,818,1111,1181,1210,1635,2060,2097,2192,2262,2324,2394,2456,3178];var bl=breaks.length,gy=jy+621,leapJ=-14,jp=breaks[0],jm,jump,leap,leapG,march,n,i;for(i=1;i<bl;i+=1){jm=breaks[i];jump=jm-jp;if(jy<jm)break;leapJ=leapJ+div(jump,33)*8+div(jump%33,4);jp=jm;}n=jy-jp;leapJ=leapJ+div(n,33)*8+div(n%33+3,4);if((jump%33)===4&&(jump-n)===4)leapJ+=1;leapG=div(gy,4)-div((div(gy,100)+1)*3,4)-150;march=20+leapJ-leapG;if((jump-n)<6)n=n-jump+div(jump+4,33)*33;leap=((((n+1)%33)-1)%4);if(leap===-1)leap=4;return{leap:leap,gy:gy,march:march};}
+function isLeapJalaali(jy){return jalCal(jy).leap===0;}
+function jMonthLen(jy,jm){if(jm<=6)return 31;if(jm<=11)return 30;return isLeapJalaali(jy)?30:29;}
+function g2d(gy,gm,gd){var d=div((gy+div(gm-8,6)+100100)*1461,4)+div(153*((gm+9)%12)+2,5)+gd-34840408;d=d-div(div(gy+100100+div(gm-8,6),100)*3,4)+752;return d;}
+function d2g(jdn){var j,i,gd,gm,gy;j=4*jdn+139361631;j=j+div(div(4*jdn+183187720,146097)*3,4)*4-3908;i=div((j%1461),4)*5+308;gd=div((i%153),5)+1;gm=(div(i,153)%12)+1;gy=div(j,1461)-100100+div(8-gm,6);return{gy:gy,gm:gm,gd:gd};}
+function j2d(jy,jm,jd){var r=jalCal(jy);return g2d(r.gy,3,r.march)+(jm-1)*31-div(jm,7)*(jm-7)+jd-1;}
+function d2j(jdn){var gy=d2g(jdn).gy,jy=gy-621,r=jalCal(jy),jdn1f=g2d(gy,3,r.march),jd,jm,k;k=jdn-jdn1f;if(k>=0){if(k<=185){jm=1+div(k,31);jd=(k%31)+1;return{jy:jy,jm:jm,jd:jd};}else{k-=186;}}else{jy-=1;k+=179;if(r.leap===1)k+=1;}jm=7+div(k,30);jd=(k%30)+1;return{jy:jy,jm:jm,jd:jd};}
+function toJalaali(gy,gm,gd){return d2j(g2d(gy,gm,gd));}
+function toGregorian(jy,jm,jd){return d2g(j2d(jy,jm,jd));}
+
+/* ===== ابزارها ===== */
+const faDigits="۰۱۲۳۴۵۶۷۸۹";
+function toFa(v){return String(v).replace(/[0-9]/g,d=>faDigits[d]);}
+function faToEn(v){return String(v).replace(/[۰-۹]/g,d=>faDigits.indexOf(d));}
+function numFa(v){if(v===""||v==null||isNaN(v))return "۰";return toFa(Number(v).toLocaleString("en-US"));}
+const money=numFa;
+function pad2(n){return n<10?"0"+n:""+n;}
+function val(id){return document.getElementById(id).value;}
+function setVal(id,v){document.getElementById(id).value=v;}
+function byDate(arr,d){return arr.filter(r=>r.date===d);}
+function todayJStr(){const t=new Date();const j=toJalaali(t.getFullYear(),t.getMonth()+1,t.getDate());return j.jy+"/"+pad2(j.jm)+"/"+pad2(j.jd);}
+function genUid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
+function resetFields(ids){ids.forEach(id=>{const el=document.getElementById(id);if(!el)return;if(el.tagName==="SELECT"){el.selectedIndex=0;}else if(el.type==="checkbox"){el.checked=false;}else{el.value="";}});}
+function isDuplicateRecord(arr,rec,fields){return arr.some(r=>fields.every(f=>String(r[f]==null?"":r[f]).trim()===String(rec[f]==null?"":rec[f]).trim()));}
+function confirmDuplicate(arr,rec,fields,label){if(isDuplicateRecord(arr,rec,fields))return confirm(label+" قبلاً برای همین تاریخ ثبت شده است. آیا مطمئن هستید که می‌خواهید دوباره ثبت کنید؟");return true;}
+let toastTimer;
+function notify(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2300);}
+function setStat(id,text){const el=document.getElementById(id);if(!el)return;el.textContent=text;el.classList.remove("pop");void el.offsetWidth;el.classList.add("pop");}
+function syncBadge(r){return r&&r.synced?'<span class="badge badge-ok" title="همگام‌سازی شده با گوگل شیت"><i class="fa-solid fa-cloud-arrow-up"></i></span>':'<span class="badge badge-warn" title="ذخیره محلی، در انتظار هماهنگی"><i class="fa-solid fa-arrows-rotate fa-spin"></i></span>';}
+
+/* ===== تقویم شمسی ===== */
+const JMONTHS=["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+let jdpInput=null,jdpY=1404,jdpM=1;
+function openPicker(input){jdpInput=input;const p=(input.value||"").split("/").map(Number);let j;if(p.length===3&&p[0])j={jy:p[0],jm:p[1],jd:p[2]};else{const t=todayJStr().split("/").map(Number);j={jy:t[0],jm:t[1],jd:t[2]};}jdpY=j.jy;jdpM=j.jm;renderPicker();positionPicker(input);document.getElementById("jdp").classList.remove("hidden");}
+function renderPicker(){document.getElementById("jdp-title").textContent=JMONTHS[jdpM-1]+" "+toFa(jdpY);const g=toGregorian(jdpY,jdpM,1);const firstCol=(new Date(g.gy,g.gm-1,g.gd).getDay()+1)%7;const len=jMonthLen(jdpY,jdpM);const sel=(jdpInput.value||"").split("/").map(Number);let html="";for(let i=0;i<firstCol;i++)html+="<span></span>";for(let d=1;d<=len;d++){const s=(sel[0]===jdpY&&sel[1]===jdpM&&sel[2]===d);html+=`<button class="jdp-day${s?' sel':''}" onclick="pickDay(${d})">${toFa(d)}</button>`;}document.getElementById("jdp-grid").innerHTML=html;}
+function pickDay(d){jdpInput.value=jdpY+"/"+pad2(jdpM)+"/"+pad2(d);jdpInput.dispatchEvent(new Event("change"));closePicker();}
+function pickToday(){const t=todayJStr().split("/").map(Number);jdpY=t[0];jdpM=t[1];pickDay(t[2]);}
+function navMonth(dir){jdpM+=dir;if(jdpM<1){jdpM=12;jdpY--;}if(jdpM>12){jdpM=1;jdpY++;}renderPicker();}
+function closePicker(){document.getElementById("jdp").classList.add("hidden");jdpInput=null;}
+function positionPicker(input){const r=input.getBoundingClientRect();const jdp=document.getElementById("jdp");jdp.style.top=(window.scrollY+r.bottom+6)+"px";let w=jdp.offsetWidth||280;let left=window.scrollX+r.left;const vw=document.documentElement.clientWidth;if(left+w+8>window.scrollX+vw)left=window.scrollX+vw-w-8;if(left<window.scrollX+8)left=window.scrollX+8;jdp.style.left=left+"px";}
+document.addEventListener("click",function(e){const jdp=document.getElementById("jdp");if(jdp.classList.contains("hidden"))return;if(!jdp.contains(e.target)&&!(e.target.classList&&e.target.classList.contains("jdate")))closePicker();});
+
+/* ===== داده‌ها (حافظه) ===== */
+const TOTAL=200;
+let hrRows=[],logRows=[],invRows=[],accRows=[],harvRows=[],sprayRows=[],orchardRows=[],irrRows=[],sheepRows=[],securityRows=[];
+let irrState=new Array(TOTAL).fill(0);
+let sessionDirty=false;
+const STORE_KEY="farmManagerData_v4";
+
+/* ===== پایگاه داده محلی: IndexedDB (Dexie) با بازگشت خودکار به LocalStorage ===== */
+let db=null,dbReady=Promise.resolve(),useIndexedDB=true;
+const DB_TABLES=["attendance","machinery","irrigation","pest_fertilizer","orchard","inventory","accounting","harvest","sheep","security"];
+function moduleArr(key){return {attendance:hrRows,machinery:logRows,irrigation:irrRows,pest_fertilizer:sprayRows,orchard:orchardRows,inventory:invRows,accounting:accRows,harvest:harvRows,sheep:sheepRows,security:securityRows}[key];}
+function initDB(){
+  try{
+    if(window.indexedDB && typeof Dexie!=="undefined"){
+      db=new Dexie("FarmDatabase");
+      db.version(1).stores({attendance:"uid, date, worker, synced",machinery:"uid, date, machine, synced",irrigation:"date, synced",pest_fertilizer:"uid, date, garden, synced",orchard:"uid, date, garden, synced",inventory:"uid, date, item, synced",accounting:"uid, date, type, synced",harvest:"uid, date, product, synced",sheep:"uid, date, category, synced",security:"uid, date, type, synced"});
+      dbReady=db.open().then(loadAllFromDB).catch(()=>{useIndexedDB=false;db=null;loadAllFromLocal();});
+      return dbReady;
+    }
+  }catch(e){}
+  useIndexedDB=false;db=null;loadAllFromLocal();
+  return Promise.resolve();
+}
+function loadAllFromDB(){
+  return Promise.all(DB_TABLES.map(t=>db.table(t).toArray())).then(res=>{
+    [hrRows,logRows,irrRows,sprayRows,orchardRows,invRows,accRows,harvRows,sheepRows,securityRows]=res;
+  });
+}
+function persistFallback(){if(useIndexedDB)return;try{localStorage.setItem(STORE_KEY,JSON.stringify({hrRows,logRows,invRows,accRows,harvRows,sprayRows,orchardRows,irrRows,sheepRows,securityRows}));}catch(e){}}
+function loadAllFromLocal(){try{const raw=localStorage.getItem(STORE_KEY);if(!raw)return false;const d=JSON.parse(raw);hrRows=d.hrRows||[];logRows=d.logRows||[];invRows=d.invRows||[];accRows=d.accRows||[];harvRows=d.harvRows||[];sprayRows=d.sprayRows||[];orchardRows=d.orchardRows||[];irrRows=d.irrRows||[];sheepRows=d.sheepRows||[];securityRows=d.securityRows||[];return true;}catch(e){return false;}}
+function dbPut(table,rec){if(db)dbReady.then(()=>db.table(table).put(rec)).catch(()=>{});if(!useIndexedDB)persistFallback();updateSyncSummary();}
+function dbDel(table,key){if(key===undefined||key===null)return;if(db)dbReady.then(()=>db.table(table).delete(key)).catch(()=>{});if(!useIndexedDB)persistFallback();updateSyncSummary();}
+function renderAll(){renderHr();renderLog();renderInv();renderAcc();renderHarv();renderSpray();renderOrchard();renderIrrHistory();renderSheep();renderSecurity();updateCount();updateSyncSummary();}
+
+/* ===== همگام‌سازی ابری با گوگل شیت (آفلاین-اول) ===== */
+function getScriptUrl(){try{return localStorage.getItem("farmGSUrl")||"";}catch(e){return "";}}
+function saveScriptUrl(){const u=val("gs-url").trim();try{localStorage.setItem("farmGSUrl",u);}catch(e){}notify(u?"آدرس وب‌اپ گوگل ذخیره شد.":"آدرس حذف شد.");updateSyncSummary();}
+const RENDER_MAP={attendance:()=>renderHr(),machinery:()=>renderLog(),irrigation:()=>renderIrrHistory(),pest_fertilizer:()=>renderSpray(),orchard:()=>renderOrchard(),inventory:()=>renderInv(),accounting:()=>renderAcc(),harvest:()=>renderHarv(),sheep:()=>renderSheep(),security:()=>renderSecurity()};
+function attemptSync(moduleKey,rec){
+  const url=getScriptUrl();if(!url)return;
+  fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({module:moduleKey,record:rec})})
+    .then(r=>r.json()).then(j=>{if(j&&j.status==="success")markRecordSynced(moduleKey,rec);})
+    .catch(()=>{/* همچنان به‌صورت محلی ذخیره است؛ بعداً با دکمه همگام‌سازی قابل ارسال است */});
+}
+function markRecordSynced(moduleKey,rec){rec.synced=true;if(db)db.table(moduleKey).put(rec).catch(()=>{});if(!useIndexedDB)persistFallback();if(RENDER_MAP[moduleKey])RENDER_MAP[moduleKey]();updateSyncSummary();}
+function pendingCount(){return DB_TABLES.reduce((n,k)=>n+moduleArr(k).filter(r=>!r.synced).length,0);}
+function updateSyncSummary(){const el=document.getElementById("sync-pending-count");if(el)el.textContent=toFa(pendingCount());}
+function syncPendingAll(){
+  const url=getScriptUrl();if(!url){notify("ابتدا آدرس وب‌اپ گوگل را ثبت کنید.");return;}
+  let pending=[];DB_TABLES.forEach(k=>moduleArr(k).filter(r=>!r.synced).forEach(r=>pending.push([k,r])));
+  if(!pending.length){notify("رکورد معلقی برای همگام‌سازی وجود ندارد.");return;}
+  notify("در حال همگام‌سازی "+toFa(pending.length)+" رکورد...");
+  let done=0,fail=0;
+  Promise.all(pending.map(([k,r])=>fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({module:k,record:r})})
+    .then(res=>res.json()).then(j=>{if(j&&j.status==="success"){r.synced=true;if(db)db.table(k).put(r).catch(()=>{});done++;}else fail++;}).catch(()=>{fail++;})))
+    .then(()=>{if(!useIndexedDB)persistFallback();DB_TABLES.forEach(k=>RENDER_MAP[k]());updateSyncSummary();notify(toFa(done)+" رکورد همگام‌سازی شد"+(fail?"، "+toFa(fail)+" مورد ناموفق":"")+".");});
+}
+
+/* ===== لیست‌های مرجع ===== */
+const WORKERS=["دادعلی","مرتضی","عیسی","موسی","میلاد","کارگر روزمزد"];
+const MACHINES=["تراکتور ماهیندرا","تراکتور ۴ سیلندر قدیمی","تراکتور ۴ سیلندر جدید","تراکتور ۶ سیلندر قدیمی","تراکتور ۶ سیلندر جدید","تراکتور رومانی بیل‌دار"];
+const GARDENS=Array.from({length:20},(_,i)=>"باغ "+toFa(i+1));
+const SPRAY_OPS=["سم‌پاشی آفات","قارچ‌کشی","علف‌کشی","کوددهی خاکی","محلول‌پاشی برگی"];
+const ORCHARD_TASKS=["گرده‌افشانی (تلقیح)","پاجوش‌گیری","هرس و تاج‌بری برگ‌های خشک","تنک‌کردن خوشه","پایین‌کشی و تنظیم خوشه","کیسه‌کشی و پوشش خوشه","برداشت محصول","وجین و علف‌زنی","شخم و خاک‌ورزی","کوددهی پای نخل","مبارزه با آفات","واکاری و کاشت نهال","پاک‌سازی و جمع‌آوری زائدات","مرمت جوی و نهر آبیاری","بازدید و سرکشی"];
+const SHEEP_CATS=["تولد بره/بزغاله","تلفات","بیماری و درمان","واکسیناسیون","خرید دام","فروش دام","مصرف علوفه/تغذیه","سایر"];
+const SEC_TYPES=["ورود غیرمجاز/خرابکاری","خسارت دام همسایه","بازدید/ملاقات رسمی","حادثه","سایر"];
+const SEC_IDENT=["بله","خیر","در حال بررسی"];
+const SEC_ACTION=["تذکر داده شد","خسارت دریافت شد","پیگیری قانونی/شکایت","بدون اقدام/مختومه"];
+function refreshWorkersList(){const names=new Set(WORKERS);hrRows.forEach(r=>r.worker&&names.add(r.worker));document.getElementById("workers-list").innerHTML=[...names].map(w=>`<option value="${w}">`).join("");}
+function populateSelects(){
+  refreshWorkersList();
+  document.getElementById("log-machine").innerHTML=MACHINES.map(m=>`<option>${m}</option>`).join("");
+  document.getElementById("q-mach-name").innerHTML=MACHINES.map(m=>`<option>${m}</option>`).join("");
+  document.getElementById("orchard-garden").innerHTML=GARDENS.map(g=>`<option>${g}</option>`).join("");
+  document.getElementById("spray-garden").innerHTML=["کل مزرعه",...GARDENS].map(g=>`<option>${g}</option>`).join("");
+  document.getElementById("spray-op").innerHTML=SPRAY_OPS.map(o=>`<option>${o}</option>`).join("");
+  document.getElementById("orchard-task").innerHTML=ORCHARD_TASKS.map(t=>`<option>${t}</option>`).join("");
+  document.getElementById("sheep-cat").innerHTML=SHEEP_CATS.map(c=>`<option>${c}</option>`).join("");
+  document.getElementById("sec-type").innerHTML=SEC_TYPES.map(c=>`<option>${c}</option>`).join("");
+  document.getElementById("sec-identified").innerHTML=SEC_IDENT.map(c=>`<option>${c}</option>`).join("");
+  document.getElementById("sec-action").innerHTML=SEC_ACTION.map(c=>`<option>${c}</option>`).join("");
+}
+function attachNonNegativeGuards(){
+  document.querySelectorAll('input[type=number]').forEach(inp=>{
+    inp.addEventListener("input",function(){if(this.value!==""&&Number(this.value)<0){this.value="";notify("مقادیر منفی مجاز نیست.");}});
+  });
+}
+
+/* ===== تب‌ها ===== */
+const TABS=["hr","log","irr","spray","orchard","inv","acc","harv","sheep","security","rep"];
+const TAB_META={hr:{icon:"fa-users",label:"حضور و غیاب"},log:{icon:"fa-screwdriver-wrench",label:"ماشین‌آلات"},irr:{icon:"fa-droplet",label:"آبیاری"},spray:{icon:"fa-spray-can-sparkles",label:"کود و سم"},orchard:{icon:"fa-tree",label:"امورات باغی"},inv:{icon:"fa-boxes-stacked",label:"انبارداری"},acc:{icon:"fa-wallet",label:"حسابداری"},harv:{icon:"fa-wheat-awn",label:"برداشت و فروش"},sheep:{icon:"fa-paw",label:"پرورش گوسفند"},security:{icon:"fa-shield-halved",label:"امنیت و تردد"},rep:{icon:"fa-clipboard-list",label:"گزارش مدیریتی"}};
+function showTab(name){TABS.forEach(k=>{document.getElementById("pane-"+k).classList.toggle("hidden",k!==name);document.querySelectorAll('[id="tab-'+k+'"]').forEach(b=>b.classList.toggle("active",k===name));});const m=TAB_META[name];if(m)document.getElementById("mbar-title").innerHTML=`<i class="fa-solid ${m.icon} text-leaf-600"></i> ${m.label}`;closeDrawer();window.scrollTo({top:0,behavior:"smooth"});}
+function openDrawer(){document.getElementById("mdrawer").classList.add("open");document.body.style.overflow="hidden";}
+function closeDrawer(){document.getElementById("mdrawer").classList.remove("open");document.body.style.overflow="";}
+
+/* ===== حضور و غیاب ===== */
+document.getElementById("hr-quality").addEventListener("change",function(){const l=document.getElementById("hr-quality-label");if(this.checked){l.textContent="تأیید شده";l.className="text-sm font-semibold text-leaf-600";}else{l.textContent="تأیید نشده";l.className="text-sm font-semibold text-red-500";}});
+function addHr(){const r={uid:genUid(),synced:false,date:val("hr-date"),worker:val("hr-worker").trim(),timeIn:val("hr-in"),timeOut:val("hr-out"),workType:document.querySelector('input[name="hr-type"]:checked').value,desc:val("hr-desc").trim(),quality:document.getElementById("hr-quality").checked,bonus:val("hr-bonus")};if(!r.date){notify("لطفاً تاریخ را وارد کنید.");return;}if(!r.worker){notify("نام کارگر را وارد کنید.");return;}if(!confirmDuplicate(hrRows,r,["date","worker"],"این کارگر"))return;hrRows.push(r);renderHr();dbPut("attendance",r);attemptSync("attendance",r);sessionDirty=true;refreshWorkersList();resetFields(["hr-worker","hr-in","hr-out","hr-desc","hr-bonus"]);const q=document.getElementById("hr-quality");if(q.checked){q.checked=false;q.dispatchEvent(new Event("change"));}const baseType=document.querySelector('input[name="hr-type"][value="فقط پایه"]');if(baseType)baseType.checked=true;notify("رکورد حضور و غیاب ثبت شد.");}
+function deleteHr(i){const r=hrRows[i];hrRows.splice(i,1);renderHr();dbDel("attendance",r&&r.uid);sessionDirty=true;}
+function renderHr(){document.getElementById("hr-empty").style.display=hrRows.length?"none":"block";document.getElementById("hr-tbody").innerHTML=hrRows.map((r,i)=>`<tr><td class="px-4 py-3" data-label="تاریخ">${toFa(r.date)}</td><td class="px-4 py-3 font-semibold" data-label="کارگر">${r.worker}</td><td class="px-4 py-3" data-label="ورود">${toFa(r.timeIn||"—")}</td><td class="px-4 py-3" data-label="خروج">${toFa(r.timeOut||"—")}</td><td class="px-4 py-3" data-label="نوع کار">${r.workType}</td><td class="px-4 py-3 mw-cell truncate" data-label="شرح کار" title="${r.desc}">${r.desc||"—"}</td><td class="px-4 py-3" data-label="کیفیت">${r.quality?'<span class="badge badge-ok"><i class="fa-solid fa-circle-check"></i> تأیید</span>':'<span class="badge badge-no"><i class="fa-solid fa-circle-xmark"></i> رد</span>'}</td><td class="px-4 py-3 font-semibold" data-label="پاداش">${money(r.bonus)}</td><td class="px-4 py-3" data-label="همگام‌سازی">${syncBadge(r)}</td><td class="px-4 py-3" data-label="حذف"><button onclick="deleteHr(${i})" class="del"><i class="fa-solid fa-trash"></i></button></td></tr>`).join("");}
+
+/* ===== ماشین‌آلات ===== */
+function addLog(){const s=parseFloat(val("log-start")),e=parseFloat(val("log-end"));const r={uid:genUid(),synced:false,date:val("log-date"),machine:val("log-machine"),driver:val("log-driver").trim(),start:isNaN(s)?"":s,end:isNaN(e)?"":e,usefulHours:(!isNaN(s)&&!isNaN(e)&&e>=s)?+(e-s).toFixed(2):"",category:val("log-cat"),details:val("log-details").trim(),cost:val("log-cost").trim()};if(!r.date){notify("لطفاً تاریخ را وارد کنید.");return;}if(!confirmDuplicate(logRows,r,["date","machine","category"],"این رویداد ماشین"))return;logRows.push(r);renderLog();dbPut("machinery",r);attemptSync("machinery",r);sessionDirty=true;resetFields(["log-driver","log-start","log-end","log-details","log-cost"]);notify("رویداد ماشین ثبت شد.");}
+function deleteLog(i){const r=logRows[i];logRows.splice(i,1);renderLog();dbDel("machinery",r&&r.uid);sessionDirty=true;}
+function renderLog(){document.getElementById("log-empty").style.display=logRows.length?"none":"block";document.getElementById("log-tbody").innerHTML=logRows.map((r,i)=>`<tr><td class="px-4 py-3" data-label="تاریخ">${toFa(r.date)}</td><td class="px-4 py-3 font-semibold" data-label="ماشین">${r.machine}</td><td class="px-4 py-3" data-label="راننده">${r.driver||"—"}</td><td class="px-4 py-3" data-label="شروع">${r.start===""?"—":toFa(r.start)}</td><td class="px-4 py-3" data-label="پایان">${r.end===""?"—":toFa(r.end)}</td><td class="px-4 py-3 font-bold text-water-700" data-label="کارکرد مفید">${r.usefulHours===""?"—":toFa(r.usefulHours)+" ساعت"}</td><td class="px-4 py-3" data-label="رویداد">${r.category}</td><td class="px-4 py-3 mw-cell truncate" data-label="جزئیات" title="${r.details}">${r.details||"—"}</td><td class="px-4 py-3" data-label="هزینه">${r.cost||"—"}</td><td class="px-4 py-3" data-label="همگام‌سازی">${syncBadge(r)}</td><td class="px-4 py-3" data-label="حذف"><button onclick="deleteLog(${i})" class="del"><i class="fa-solid fa-trash"></i></button></td></tr>`).join("");}
+
+/* ===== آبیاری (بایگانی روزانه) ===== */
+function buildGrid(){const g=document.getElementById("irr-grid");g.innerHTML="";for(let i=0;i<TOTAL;i++){const c=document.createElement("div");c.className="cell"+(irrState[i]?" on":"");c.id="cell-"+i;c.textContent=toFa(i+1);c.onclick=()=>toggleCell(i);g.appendChild(c);}updateCount();}
+function paintGrid(){for(let i=0;i<TOTAL;i++){const c=document.getElementById("cell-"+i);if(c)c.classList.toggle("on",!!irrState[i]);}}
+function toggleCell(i){irrState[i]=irrState[i]?0:1;const c=document.getElementById("cell-"+i);if(c)c.classList.toggle("on",!!irrState[i]);updateCount();}
+function applyRange(){let f=parseInt(val("range-from")),t=parseInt(val("range-to"));if(isNaN(f)||isNaN(t)){notify("بازه را به‌درستی وارد کنید.");return;}if(f>t)[f,t]=[t,f];f=Math.max(1,f);t=Math.min(TOTAL,t);for(let n=f;n<=t;n++){irrState[n-1]=1;document.getElementById("cell-"+(n-1)).classList.add("on");}updateCount();notify(`آبریز ${toFa(f)} تا ${toFa(t)} انتخاب شد.`);}
+function clearAll(){irrState=new Array(TOTAL).fill(0);document.querySelectorAll(".cell").forEach(c=>c.classList.remove("on"));updateCount();}
+function updateCount(){setStat("irr-count",toFa(irrState.reduce((a,b)=>a+b,0)));}
+function loadIrrForDate(d){const rec=irrRows.find(r=>r.date===d);irrState=rec?rec.state.slice():new Array(TOTAL).fill(0);setVal("irr-worker",rec?(rec.worker||""):"");paintGrid();updateCount();}
+function saveIrrDay(){const d=val("irr-date");if(!d){notify("تاریخ را انتخاب کنید.");return;}const worker=val("irr-worker").trim();const count=irrState.reduce((a,b)=>a+b,0);const idx=irrRows.findIndex(r=>r.date===d);const rec=idx>=0?irrRows[idx]:{date:d};rec.worker=worker;rec.state=irrState.slice();rec.count=count;rec.synced=false;if(idx>=0)irrRows[idx]=rec;else irrRows.push(rec);renderIrrHistory();dbPut("irrigation",rec);attemptSync("irrigation",rec);sessionDirty=true;notify("آبیاری روز "+toFa(d)+" بایگانی شد.");}
+function renderIrrHistory(){const sorted=[...irrRows].sort((a,b)=>a.date<b.date?1:-1);document.getElementById("irr-hist-empty").style.display=sorted.length?"none":"block";document.getElementById("irr-hist-tbody").innerHTML=sorted.map(r=>{const i=irrRows.indexOf(r);return `<tr><td class="px-4 py-3 font-semibold" data-label="تاریخ">${toFa(r.date)}</td><td class="px-4 py-3" data-label="آبدار">${r.worker||"—"}</td><td class="px-4 py-3 font-bold text-water-700" data-label="تعداد آبیاری‌شده">${toFa(r.count)} / ۲۰۰</td><td class="px-4 py-3" data-label="نمایش"><button onclick="loadIrrRow(${i})" class="text-water-700 hover:text-water-600 font-semibold"><i class="fa-solid fa-pen-to-square"></i> نمایش/ویرایش</button></td><td class="px-4 py-3" data-label="همگام‌سازی">${syncBadge(r)}</td><td class="px-4 py-3" data-label="حذف"><button onclick="deleteIrrRow(${i})" class="del"><i class="fa-solid fa-trash"></i></button></td></tr>`;}).join("");}
+function loadIrrRow(i){const r=irrRows[i];if(!r)return;setVal("irr-date",r.date);loadIrrForDate(r.date);window.scrollTo({top:0,behavior:"smooth"});notify("آبیاری روز "+toFa(r.date)+" بارگذاری شد.");}
+function deleteIrrRow(i){const r=irrRows[i];irrRows.splice(i,1);renderIrrHistory();dbDel("irrigation",r&&r.date);sessionDirty=true;notify("رکورد آبیاری حذف شد.");}
+
+/* ===== کود و سم‌پاشی ===== */
+function addSpray(){const r={uid:genUid(),synced:false,date:val("spray-date"),garden:val("spray-garden"),op:val("spray-op"),material:val("spray-material").trim(),dose:val("spray-dose").trim(),target:val("spray-target").trim(),operator:val("spray-operator").trim(),note:val("spray-note").trim()};if(!r.date){notify("لطفاً تاریخ را وارد کنید.");return;}if(!confirmDuplicate(sprayRows,r,["date","garden","op","material"],"این عملیات"))return;sprayRows.push(r);renderSpray();dbPut("pest_fertilizer",r);attemptSync("pest_fertilizer",r);sessionDirty=true;resetFields(["spray-material","spray-dose","spray-target","spray-operator","spray-note"]);notify("عملیات کود/سم ثبت شد.");}
+function deleteSpray(i){const r=sprayRows[i];sprayRows.splice(i,1);renderSpray();dbDel("pest_fertilizer",r&&r.uid);sessionDirty=true;}
+function renderSpray(){document.getElementById("spray-empty").style.display=sprayRows.length?"none":"block";document.getElementById("spray-tbody").innerHTML=sprayRows.map((r,i)=>`<tr><td class="px-4 py-3" data-label="تاریخ">${toFa(r.date)}</td><td class="px-4 py-3 font-semibold" data-label="باغ">${r.garden}</td><td class="px-4 py-3" data-label="عملیات">${r.op}</td><td class="px-4 py-3" data-label="کود/سم">${r.material||"—"}</td><td class="px-4 py-3" data-label="دوز">${r.dose||"—"}</td><td class="px-4 py-3" data-label="آفت/هدف">${r.target||"—"}</td><td class="px-4 py-3" data-label="اپراتور">${r.operator||"—"}</td><td class="px-4 py-3" data-label="همگام‌سازی">${syncBadge(r)}</td><td class="px-4 py-3" data-label="حذف"><button onclick="deleteSpray(${i})" class="del"><i class="fa-solid fa-trash"></i></button></td></tr>`).join("");}
+
+/* ===== امورات باغی ===== */
+function addOrchard(){const r={uid:genUid(),synced:false,date:val("orchard-date"),garden:val("orchard-garden"),task:val("orchard-task"),worker:val("orchard-worker").trim(),count:val("orchard-count"),status:val("orchard-status"),note:val("orchard-note").trim()};if(!r.date){notify("لطفاً تاریخ را وارد کنید.");return;}if(!confirmDuplicate(orchardRows,r,["date","garden","task"],"این کار باغی"))return;orchardRows.push(r);renderOrchard();dbPut("orchard",r);attemptSync("orchard",r);sessionDirty=true;resetFields(["orchard-worker","orchard-count","orchard-note"]);notify("کار باغی ثبت شد.");}
+function deleteOrchard(i){const r=orchardRows[i];orchardRows.splice(i,1);renderOrchard();dbDel("orchard",r&&r.uid);sessionDirty=true;}
+function statusBadge(s){if(s==="انجام شد")return '<span class="badge badge-ok">انجام شد</span>';if(s==="در حال انجام")return '<span class="badge badge-warn">در حال انجام</span>';return '<span class="badge badge-info">برنامه‌ریزی شده</span>';}
+function renderOrchard(){document.getElementById("orchard-empty").style.display=orchardRows.length?"none":"block";document.getElementById("orchard-tbody").innerHTML=orchardRows.map((r,i)=>`<tr><td class="px-4 py-3" data-label="تاریخ">${toFa(r.date)}</td><td class="px-4 py-3 font-semibold" data-label="باغ">${r.garden}</td><td class="px-4 py-3" data-label="نوع کار">${r.task}</td><td class="px-4 py-3" data-label="کارگر">${r.worker||"—"}</td><td class="px-4 py-3" data-label="تعداد">${r.count?numFa(r.count):"—"}</td><td class="px-4 py-3" data-label="وضعیت">${statusBadge(r.status)}</td><td class="px-4 py-3 mw-cell truncate" data-label="توضیحات" title="${r.note}">${r.note||"—"}</td><td class="px-4 py-3" data-label="همگام‌سازی">${syncBadge(r)}</td><td class="px-4 py-3" data-label="حذف"><button onclick="deleteOrchard(${i})" class="del"><i class="fa-solid fa-trash"></i></button></td></tr>`).join("");}
+
+/* ===== انبارداری ===== */
+function addInv(){const r={uid:genUid(),synced:false,date:val("inv-date"),item:val("inv-item").trim(),type:val("inv-type"),qty:val("inv-qty"),unit:val("inv-unit"),party:val("inv-party").trim(),desc:val("inv-desc").trim()};if(!r.date||!r.item){notify("تاریخ و نام کالا الزامی است.");return;}if(!confirmDuplicate(invRows,r,["date","item","type"],"این کالا"))return;invRows.push(r);renderInv();dbPut("inventory",r);attemptSync("inventory",r);sessionDirty=true;resetFields(["inv-item","inv-qty","inv-party","inv-desc"]);notify("تراکنش انبار ثبت شد.");}
+function deleteInv(i){const r=invRows[i];invRows.splice(i,1);renderInv();dbDel("inventory",r&&r.uid);sessionDirty=true;}
+function renderInv(){document.getElementById("inv-empty").style.display=invRows.length?"none":"block";document.getElementById("inv-tbody").innerHTML=invRows.map((r,i)=>`<tr><td class="px-4 py-3" data-label="تاریخ">${toFa(r.date)}</td><td class="px-4 py-3 font-semibold" data-label="کالا">${r.item}</td><td class="px-4 py-3" data-label="نوع">${r.type==="ورود"?'<span class="text-leaf-700 font-bold">📥 ورود</span>':'<span class="text-red-600 font-bold">📤 خروج</span>'}</td><td class="px-4 py-3" data-label="مقدار">${numFa(r.qty)}</td><td class="px-4 py-3" data-label="واحد">${r.unit}</td><td class="px-4 py-3" data-label="طرف">${r.party||"—"}</td><td class="px-4 py-3 mw-cell truncate" data-label="توضیحات" title="${r.desc}">${r.desc||"—"}</td><td class="px-4 py-3" data-label="همگام‌سازی">${syncBadge(r)}</td><td class="px-4 py-3" data-label="حذف"><button onclick="deleteInv(${i})" class="del"><i class="fa-solid fa-trash"></i></button></td></tr>`).join("");renderInvBalance();}
+function renderInvBalance(){const bal={};invRows.forEach(r=>{const q=Number(r.qty)||0;if(!bal[r.item])bal[r.item]={qty:0,unit:r.unit};bal[r.item].qty+=(r.type==="ورود"?q:-q);});const keys=Object.keys(bal),box=document.getElementById("inv-balance");if(!keys.length){box.innerHTML='<span class="text-bark-500">موجودی‌ای ثبت نشده است.</span>';return;}box.innerHTML=keys.map(k=>{const v=bal[k],neg=v.qty<0;return `<span class="chip ${neg?'chip-neg':'chip-gold'}"><i class="fa-solid fa-box"></i> ${k}: ${numFa(v.qty)} ${v.unit}</span>`;}).join("");}
+
+/* ===== حسابداری ===== */
+function addAcc(){const r={uid:genUid(),synced:false,date:val("acc-date"),type:val("acc-type"),cat:val("acc-cat"),amount:val("acc-amount"),party:val("acc-party").trim(),desc:val("acc-desc").trim()};if(!r.date||!r.amount){notify("تاریخ و مبلغ الزامی است.");return;}if(!confirmDuplicate(accRows,r,["date","type","cat","party","amount"],"این تراکنش"))return;accRows.push(r);renderAcc();dbPut("accounting",r);attemptSync("accounting",r);sessionDirty=true;resetFields(["acc-amount","acc-party","acc-desc"]);notify("تراکنش مالی ثبت شد.");}
+function deleteAcc(i){const r=accRows[i];accRows.splice(i,1);renderAcc();dbDel("accounting",r&&r.uid);sessionDirty=true;}
+function renderAcc(){document.getElementById("acc-empty").style.display=accRows.length?"none":"block";document.getElementById("acc-tbody").innerHTML=accRows.map((r,i)=>`<tr><td class="px-4 py-3" data-label="تاریخ">${toFa(r.date)}</td><td class="px-4 py-3" data-label="نوع">${r.type==="درآمد"?'<span class="text-leaf-700 font-bold">💵 درآمد</span>':'<span class="text-red-600 font-bold">🧾 هزینه</span>'}</td><td class="px-4 py-3" data-label="دسته">${r.cat}</td><td class="px-4 py-3 mw-cell truncate" data-label="شرح" title="${r.desc}">${r.desc||"—"}</td><td class="px-4 py-3" data-label="طرف حساب">${r.party||"—"}</td><td class="px-4 py-3 font-bold ${r.type==="درآمد"?'text-leaf-700':'text-red-600'}" data-label="مبلغ">${money(r.amount)}</td><td class="px-4 py-3" data-label="همگام‌سازی">${syncBadge(r)}</td><td class="px-4 py-3" data-label="حذف"><button onclick="deleteAcc(${i})" class="del"><i class="fa-solid fa-trash"></i></button></td></tr>`).join("");const inc=accRows.filter(r=>r.type==="درآمد").reduce((a,r)=>a+(Number(r.amount)||0),0);const exp=accRows.filter(r=>r.type==="هزینه").reduce((a,r)=>a+(Number(r.amount)||0),0);setStat("acc-income",money(inc)+" تومان");setStat("acc-expense",money(exp)+" تومان");setStat("acc-balance",(inc-exp<0?"-":"")+money(Math.abs(inc-exp))+" تومان");}
+
+/* ===== برداشت و فروش ===== */
+function addHarv(){const sold=parseFloat(val("harv-sold")),price=parseFloat(val("harv-price"));const r={uid:genUid(),synced:false,date:val("harv-date"),product:val("harv-product"),harvested:val("harv-harvested"),sold:val("harv-sold"),price:val("harv-price"),total:(!isNaN(sold)&&!isNaN(price))?Math.round(sold*price):"",buyer:val("harv-buyer").trim(),note:val("harv-note").trim()};if(!r.date){notify("لطفاً تاریخ را وارد کنید.");return;}if(!confirmDuplicate(harvRows,r,["date","product"],"این رکورد"))return;harvRows.push(r);renderHarv();dbPut("harvest",r);attemptSync("harvest",r);sessionDirty=true;resetFields(["harv-harvested","harv-sold","harv-price","harv-buyer","harv-note"]);notify("رکورد برداشت/فروش ثبت شد.");}
+function deleteHarv(i){const r=harvRows[i];harvRows.splice(i,1);renderHarv();dbDel("harvest",r&&r.uid);sessionDirty=true;}
+function renderHarv(){document.getElementById("harv-empty").style.display=harvRows.length?"none":"block";document.getElementById("harv-tbody").innerHTML=harvRows.map((r,i)=>`<tr><td class="px-4 py-3" data-label="تاریخ">${toFa(r.date)}</td><td class="px-4 py-3 font-semibold" data-label="محصول">${r.product}</td><td class="px-4 py-3" data-label="برداشت">${numFa(r.harvested)}</td><td class="px-4 py-3" data-label="فروش">${numFa(r.sold)}</td><td class="px-4 py-3" data-label="قیمت واحد">${money(r.price)}</td><td class="px-4 py-3 font-bold text-leaf-700" data-label="مبلغ کل">${r.total===""?"—":money(r.total)}</td><td class="px-4 py-3" data-label="خریدار">${r.buyer||"—"}</td><td class="px-4 py-3" data-label="همگام‌سازی">${syncBadge(r)}</td><td class="px-4 py-3" data-label="حذف"><button onclick="deleteHarv(${i})" class="del"><i class="fa-solid fa-trash"></i></button></td></tr>`).join("");const h=harvRows.reduce((a,r)=>a+(Number(r.harvested)||0),0),s=harvRows.reduce((a,r)=>a+(Number(r.sold)||0),0),rev=harvRows.reduce((a,r)=>a+(Number(r.total)||0),0);setStat("harv-total-h",numFa(h)+" کیلوگرم");setStat("harv-total-s",numFa(s)+" کیلوگرم");setStat("harv-total-r",money(rev)+" تومان");}
+
+/* ===== پرورش گوسفند ===== */
+function addSheep(){const r={uid:genUid(),synced:false,date:val("sheep-date"),category:val("sheep-cat"),count:val("sheep-count"),amount:val("sheep-amount"),person:val("sheep-person").trim(),desc:val("sheep-desc").trim()};if(!r.date){notify("لطفاً تاریخ را وارد کنید.");return;}if(r.count===""||Number(r.count)<=0){notify("تعداد باید عددی مثبت باشد.");return;}if(!confirmDuplicate(sheepRows,r,["date","category","count"],"این رویداد دامداری"))return;sheepRows.push(r);renderSheep();dbPut("sheep",r);attemptSync("sheep",r);sessionDirty=true;refreshWorkersList();resetFields(["sheep-count","sheep-amount","sheep-person","sheep-desc"]);notify("رکورد دامداری ثبت شد.");}
+function deleteSheep(i){const r=sheepRows[i];sheepRows.splice(i,1);renderSheep();dbDel("sheep",r&&r.uid);sessionDirty=true;}
+function renderSheep(){
+  document.getElementById("sheep-empty").style.display=sheepRows.length?"none":"block";
+  document.getElementById("sheep-tbody").innerHTML=sheepRows.map((r,i)=>`<tr><td class="px-4 py-3" data-label="تاریخ">${toFa(r.date)}</td><td class="px-4 py-3 font-semibold" data-label="دسته‌بندی">${r.category}</td><td class="px-4 py-3" data-label="تعداد">${numFa(r.count)}</td><td class="px-4 py-3" data-label="مبلغ">${r.amount?money(r.amount)+" تومان":"—"}</td><td class="px-4 py-3" data-label="مسئول">${r.person||"—"}</td><td class="px-4 py-3 mw-cell truncate" data-label="توضیحات" title="${r.desc}">${r.desc||"—"}</td><td class="px-4 py-3" data-label="همگام‌سازی">${syncBadge(r)}</td><td class="px-4 py-3" data-label="حذف"><button onclick="deleteSheep(${i})" class="del"><i class="fa-solid fa-trash"></i></button></td></tr>`).join("");
+  const cnt=cat=>sheepRows.filter(r=>r.category===cat).reduce((a,r)=>a+(Number(r.count)||0),0);
+  const births=cnt("تولد بره/بزغاله"),deaths=cnt("تلفات"),purchases=cnt("خرید دام"),sales=cnt("فروش دام");
+  setStat("sheep-total",numFa(Math.max(0,purchases+births-deaths-sales)));
+  setStat("sheep-births",numFa(births));
+  setStat("sheep-deaths",numFa(deaths));
+}
+
+/* ===== امنیت و تردد ===== */
+function addSecurity(){const r={uid:genUid(),synced:false,date:val("sec-date"),type:val("sec-type"),title:val("sec-title").trim(),desc:val("sec-desc").trim(),identified:val("sec-identified"),action:val("sec-action"),reporter:val("sec-reporter").trim()};if(!r.date){notify("لطفاً تاریخ را وارد کنید.");return;}if(!r.title){notify("عنوان حادثه را وارد کنید.");return;}if(!confirmDuplicate(securityRows,r,["date","title"],"این رویداد امنیتی"))return;securityRows.push(r);renderSecurity();dbPut("security",r);attemptSync("security",r);sessionDirty=true;refreshWorkersList();resetFields(["sec-title","sec-desc","sec-reporter"]);notify("رکورد امنیتی ثبت شد.");}
+function deleteSecurity(i){const r=securityRows[i];securityRows.splice(i,1);renderSecurity();dbDel("security",r&&r.uid);sessionDirty=true;}
+function renderSecurity(){
+  document.getElementById("sec-empty").style.display=securityRows.length?"none":"block";
+  document.getElementById("sec-tbody").innerHTML=securityRows.map((r,i)=>`<tr><td class="px-4 py-3" data-label="تاریخ">${toFa(r.date)}</td><td class="px-4 py-3 font-semibold" data-label="نوع">${r.type}</td><td class="px-4 py-3" data-label="عنوان">${r.title}</td><td class="px-4 py-3 mw-cell truncate" data-label="شرح" title="${r.desc}">${r.desc||"—"}</td><td class="px-4 py-3" data-label="شناسایی">${r.identified}</td><td class="px-4 py-3" data-label="اقدام">${r.action}</td><td class="px-4 py-3" data-label="گزارش‌دهنده">${r.reporter||"—"}</td><td class="px-4 py-3" data-label="همگام‌سازی">${syncBadge(r)}</td><td class="px-4 py-3" data-label="حذف"><button onclick="deleteSecurity(${i})" class="del"><i class="fa-solid fa-trash"></i></button></td></tr>`).join("");
+  setStat("sec-total",numFa(securityRows.length));
+}
+
+/* ===== کمک‌توابع بازه زمانی (روزانه/هفتگی/ماهیانه/سالیانه) ===== */
+function jdnOf(dateStr){const p=String(dateStr||"").split("/").map(Number);return j2d(p[0],p[1],p[2]);}
+function isFridayStr(dateStr){const p=dateStr.split("/").map(Number);const g=toGregorian(p[0],p[1],p[2]);return new Date(g.gy,g.gm-1,g.gd).getDay()===5;}
+function dateRangeList(fromStr,toStr){const s=jdnOf(fromStr),e=jdnOf(toStr);const out=[];for(let n=Math.min(s,e);n<=Math.max(s,e);n++){const j=d2j(n);out.push(j.jy+"/"+pad2(j.jm)+"/"+pad2(j.jd));}return out;}
+function periodLabel(p){return {daily:"روزانه",weekly:"هفتگی",monthly:"ماهیانه",yearly:"سالیانه"}[p]||"روزانه";}
+function periodRange(period,dateStr){const p=dateStr.split("/").map(Number);const jy=p[0],jm=p[1],jd=p[2];const jdn=j2d(jy,jm,jd);if(period==="weekly"){const g=toGregorian(jy,jm,jd);const dow=(new Date(g.gy,g.gm-1,g.gd).getDay()+1)%7;return [jdn-dow,jdn-dow+6];}if(period==="monthly"){return [j2d(jy,jm,1),j2d(jy,jm,jMonthLen(jy,jm))];}if(period==="yearly"){return [j2d(jy,1,1),j2d(jy,12,jMonthLen(jy,12))];}return [jdn,jdn];}
+function inRange(dateStr,range){if(!dateStr)return false;const p=String(dateStr).split("/").map(Number);if(p.length<3||!p[0])return false;const jdn=j2d(p[0],p[1],p[2]);return jdn>=range[0]&&jdn<=range[1];}
+function byRange(arr,range){return arr.filter(r=>inRange(r.date,range));}
+function periodRangeLabel(range){const a=d2j(range[0]),b=d2j(range[1]);const fa=a.jy+"/"+pad2(a.jm)+"/"+pad2(a.jd),fb=b.jy+"/"+pad2(b.jm)+"/"+pad2(b.jd);return fa===fb?toFa(fa):toFa(fa)+" تا "+toFa(fb);}
+
+/* ===== مرکز استعلامات و آنالیز پویا ===== */
+function runAttendanceQuery(){
+  const worker=val("q-att-worker").trim(),from=val("q-att-from"),to=val("q-att-to");
+  if(!worker||!from||!to){notify("نام کارگر و بازه تاریخ را کامل وارد کنید.");return;}
+  const noFri=document.getElementById("q-att-nofri").checked;
+  const days=dateRangeList(from,to);
+  const present=[],absent=[];let hours=0,bonus=0;
+  days.forEach(d=>{
+    const recs=hrRows.filter(r=>r.worker===worker&&r.date===d);
+    if(recs.length){present.push(d);recs.forEach(r=>{bonus+=Number(r.bonus)||0;if(r.timeIn&&r.timeOut){const a=r.timeIn.split(":").map(Number),b=r.timeOut.split(":").map(Number);const diff=((b[0]*60+b[1])-(a[0]*60+a[1]))/60;if(diff>0)hours+=diff;}});}
+    else{if(noFri&&isFridayStr(d))return;absent.push(d);}
+  });
+  document.getElementById("q-att-result").innerHTML=`<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+    <div class="bg-leaf-500/10 border border-leaf-500/30 rounded-xl p-4"><div class="text-sm font-semibold text-leaf-700 mb-1"><i class="fa-solid fa-circle-check"></i> روزهای حضور</div><div class="text-2xl font-extrabold text-leaf-700">${numFa(present.length)}</div></div>
+    <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-4"><div class="text-sm font-semibold text-red-600 mb-1"><i class="fa-solid fa-circle-xmark"></i> غیبت برآوردی</div><div class="text-2xl font-extrabold text-red-600">${numFa(absent.length)}</div></div>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 text-sm">
+    <div><b>مجموع ساعات کار:</b> ${numFa(+hours.toFixed(1))} ساعت</div>
+    <div><b>مجموع پاداش:</b> ${money(bonus)} تومان</div>
+  </div>
+  <details class="mb-2"><summary class="cursor-pointer font-semibold text-leaf-700">فهرست روزهای حضور</summary><div class="text-xs mt-2 leading-6">${present.map(toFa).join("، ")||"—"}</div></details>
+  <details><summary class="cursor-pointer font-semibold text-red-600">فهرست روزهای غیبت</summary><div class="text-xs mt-2 leading-6">${absent.map(toFa).join("، ")||"—"}</div></details>`;
+}
+function runMachineryQuery(){
+  const machine=val("q-mach-name"),from=val("q-mach-from"),to=val("q-mach-to");
+  if(!machine||!from||!to){notify("نام ماشین و بازه تاریخ را کامل وارد کنید.");return;}
+  const s=jdnOf(from),e=jdnOf(to),lo=Math.min(s,e),hi=Math.max(s,e);
+  const recs=logRows.filter(r=>r.machine===machine&&jdnOf(r.date)>=lo&&jdnOf(r.date)<=hi);
+  const hours=recs.reduce((a,r)=>a+(Number(r.usefulHours)||0),0);
+  const serviceLogs=recs.filter(r=>r.category.includes("سرویس")||r.category.includes("خرابی"));
+  const cost=serviceLogs.reduce((a,r)=>{const m=String(r.cost||"").match(/[\d۰-۹,]+/);if(!m)return a;const n=parseFloat(faToEn(m[0]).replace(/,/g,""));return a+(isNaN(n)?0:n);},0);
+  document.getElementById("q-mach-result").innerHTML=`<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+    <div class="bg-water-500/10 border border-water-500/30 rounded-xl p-4"><div class="text-sm font-semibold text-water-700 mb-1">ساعات کارکرد</div><div class="text-xl font-extrabold text-water-700">${numFa(+hours.toFixed(1))}</div></div>
+    <div class="bg-gold-500/10 border border-gold-500/30 rounded-xl p-4"><div class="text-sm font-semibold text-gold-700 mb-1">لاگ سرویس/خرابی</div><div class="text-xl font-extrabold text-gold-700">${numFa(serviceLogs.length)}</div></div>
+    <div class="bg-bark-700/10 border border-bark-700/30 rounded-xl p-4"><div class="text-sm font-semibold text-bark-700 mb-1">هزینه نگهداری برآوردی</div><div class="text-xl font-extrabold text-bark-700">${money(cost)} تومان</div></div>
+  </div>
+  <div class="overflow-x-auto"><table class="w-full text-xs text-right"><thead><tr class="text-bark-500"><th class="py-1">تاریخ</th><th class="py-1">رویداد</th><th class="py-1">جزئیات</th><th class="py-1">هزینه</th></tr></thead><tbody>${recs.map(r=>`<tr><td class="py-1">${toFa(r.date)}</td><td class="py-1">${r.category}</td><td class="py-1">${r.details||"—"}</td><td class="py-1">${r.cost||"—"}</td></tr>`).join("")||'<tr><td colspan="4" class="py-2 text-center text-bark-400">رکوردی یافت نشد.</td></tr>'}</tbody></table></div>`;
+}
+
+/* ===== گزارش مدیریتی چنددوره‌ای ===== */
+function buildReport(){
+  const d=val("rep-date");if(!d){notify("تاریخ مرجع گزارش را انتخاب کنید.");return;}
+  const period=val("rep-period");const range=periodRange(period,d);const rangeLbl=periodRangeLabel(range);
+  const hr=byRange(hrRows,range),hrApproved=hr.filter(r=>r.quality).length,hrBonus=hr.reduce((a,r)=>a+(Number(r.bonus)||0),0),workers=[...new Set(hr.map(r=>r.worker))].join("، ");
+  const lg=byRange(logRows,range),totalHours=lg.reduce((a,r)=>a+(Number(r.usefulHours)||0),0),incidents=lg.filter(r=>r.category.includes("خرابی")).length,machines=[...new Set(lg.map(r=>r.machine))].join("، ");
+  const irrRecs=byRange(irrRows,range),irrCount=irrRecs.reduce((a,r)=>a+(Number(r.count)||0),0),irrDays=irrRecs.length;
+  const sp=byRange(sprayRows,range);
+  const oc=byRange(orchardRows,range),ocDone=oc.filter(r=>r.status==="انجام شد").length,ocGardens=[...new Set(oc.map(r=>r.garden))].length;
+  const inv=byRange(invRows,range),invIn=inv.filter(r=>r.type==="ورود").length,invOut=inv.filter(r=>r.type==="خروج").length;
+  const acc=byRange(accRows,range),income=acc.filter(r=>r.type==="درآمد").reduce((a,r)=>a+(Number(r.amount)||0),0),expense=acc.filter(r=>r.type==="هزینه").reduce((a,r)=>a+(Number(r.amount)||0),0);
+  const hv=byRange(harvRows,range),harvested=hv.reduce((a,r)=>a+(Number(r.harvested)||0),0),sold=hv.reduce((a,r)=>a+(Number(r.sold)||0),0),revenue=hv.reduce((a,r)=>a+(Number(r.total)||0),0);
+  const sh=byRange(sheepRows,range),shBirths=sh.filter(r=>r.category==="تولد بره/بزغاله").reduce((a,r)=>a+(Number(r.count)||0),0),shDeaths=sh.filter(r=>r.category==="تلفات").reduce((a,r)=>a+(Number(r.count)||0),0);
+  const se=byRange(securityRows,range);
+  const L=[];
+  L.push("🌴 گزارش "+periodLabel(period)+" مزرعه حسین‌آباد شهکل");L.push("📍 شهرستان ریگان");L.push("📅 بازه: "+rangeLbl);L.push("━━━━━━━━━━━━━━");L.push("");
+  L.push("👷 نیروی انسانی:");if(hr.length){L.push("• کارکرد ثبت‌شده: "+toFa(hr.length)+" مورد"+(workers?" ("+workers+")":""));L.push("• تأیید کیفیت توسط مدیر: "+toFa(hrApproved)+" مورد");L.push("• مجموع پاداش: "+money(hrBonus)+" تومان");}else L.push("• رکوردی ثبت نشده است.");L.push("");
+  L.push("🚜 ماشین‌آلات:");if(lg.length){L.push("• رویدادهای ثبت‌شده: "+toFa(lg.length)+" مورد"+(machines?" ("+machines+")":""));L.push("• مجموع ساعات کارکرد مفید: "+toFa(+totalHours.toFixed(2))+" ساعت");L.push("• موارد خرابی/حادثه: "+toFa(incidents)+" مورد");}else L.push("• رویدادی ثبت نشده است.");L.push("");
+  L.push("💧 آبیاری:");if(irrDays){L.push("• روزهای آبیاری‌شده: "+toFa(irrDays)+" روز");L.push("• مجموع آبریزهای آبیاری‌شده: "+toFa(irrCount));}else L.push("• آبیاری‌ای بایگانی نشده است.");L.push("");
+  L.push("🌿 کود و سم‌پاشی:");if(sp.length){L.push("• عملیات ثبت‌شده: "+toFa(sp.length)+" مورد");}else L.push("• عملیاتی ثبت نشده است.");L.push("");
+  L.push("🌳 امورات باغی:");if(oc.length){L.push("• کارهای ثبت‌شده: "+toFa(oc.length)+" مورد در "+toFa(ocGardens)+" باغ (انجام‌شده: "+toFa(ocDone)+")");}else L.push("• کاری ثبت نشده است.");L.push("");
+  L.push("📦 انبار:");if(inv.length){L.push("• ورود: "+toFa(invIn)+" مورد | خروج: "+toFa(invOut)+" مورد");}else L.push("• تراکنشی ثبت نشده است.");L.push("");
+  L.push("💰 حسابداری:");L.push("• مجموع درآمد: "+money(income)+" تومان");L.push("• مجموع هزینه: "+money(expense)+" تومان");L.push("• مانده: "+(income-expense<0?"-":"")+money(Math.abs(income-expense))+" تومان");L.push("");
+  L.push("🌾 برداشت و فروش:");if(hv.length){L.push("• مجموع برداشت: "+numFa(harvested)+" کیلوگرم");L.push("• مجموع فروش: "+numFa(sold)+" کیلوگرم");L.push("• درآمد فروش: "+money(revenue)+" تومان");}else L.push("• رکوردی ثبت نشده است.");L.push("");
+  L.push("🐑 دامداری (گوسفند):");if(sh.length){L.push("• رکوردهای ثبت‌شده: "+toFa(sh.length)+" مورد");L.push("• تولدها: "+toFa(shBirths)+" | تلفات: "+toFa(shDeaths));}else L.push("• رکوردی ثبت نشده است.");L.push("");
+  L.push("🛡 امنیت و تردد:");if(se.length){L.push("• حوادث ثبت‌شده: "+toFa(se.length)+" مورد");se.slice(0,5).forEach(r=>L.push("   - "+toFa(r.date)+": "+r.title+" ("+r.type+")"));}else L.push("• حادثه‌ای ثبت نشده است.");L.push("");
+  L.push("━━━━━━━━━━━━━━");L.push("این گزارش توسط سامانه مدیریت مزرعه تولید شده است.");L.push("با احترام،");L.push("مدیر اجرایی مزرعه حسین‌آباد شهکل");
+  document.getElementById("rep-text").value=L.join("\n");notify("گزارش "+periodLabel(period)+" تولید شد.");
+}
+function copyReport(){const ta=document.getElementById("rep-text");if(!ta.value.trim()){notify("ابتدا گزارش را تولید کنید.");return;}ta.select();try{if(navigator.clipboard){navigator.clipboard.writeText(ta.value);}else{document.execCommand("copy");}}catch(e){document.execCommand("copy");}notify("متن گزارش کپی شد.");}
+function shareWhatsApp(){const t=document.getElementById("rep-text").value.trim();if(!t){notify("ابتدا گزارش را تولید کنید.");return;}window.open("https://wa.me/?text="+encodeURIComponent(t),"_blank");}
+function shareTelegram(){const t=document.getElementById("rep-text").value.trim();if(!t){notify("ابتدا گزارش را تولید کنید.");return;}window.open("https://t.me/share/url?url=%20&text="+encodeURIComponent(t),"_blank");}
+function downloadReportTxt(){const t=document.getElementById("rep-text").value.trim();if(!t){notify("ابتدا گزارش را تولید کنید.");return;}const blob=new Blob([t],{type:"text/plain;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="Farm_Report_"+val("rep-date").replace(/\//g,"-")+".txt";a.click();URL.revokeObjectURL(a.href);notify("فایل متنی دانلود شد.");}
+
+/* ===== خروجی اکسل جامع (یک هلپر عمومی برای هر ۱۰ دفتر، بدون تکرار کد) ===== */
+const SYNC_LBL=r=>r.synced?"همگام":"محلی";
+const EXPORT_DEFS={
+  attendance:{name:"حضور و غیاب",header:["تاریخ","کارگر","ساعت ورود","ساعت خروج","نوع کار","شرح کار","تأیید کیفیت","پاداش (تومان)","وضعیت همگام‌سازی"],row:r=>[r.date,r.worker,r.timeIn,r.timeOut,r.workType,r.desc,r.quality?"تأیید شده":"تأیید نشده",Number(r.bonus)||0,SYNC_LBL(r)]},
+  machinery:{name:"ماشین‌آلات",header:["تاریخ","ماشین","راننده","ساعت‌کار شروع","ساعت‌کار پایان","ساعات کارکرد مفید","رویداد","جزئیات","هزینه/مصرف","وضعیت همگام‌سازی"],row:r=>[r.date,r.machine,r.driver,r.start,r.end,r.usefulHours,r.category,r.details,r.cost,SYNC_LBL(r)]},
+  irrigation:{name:"آبیاری",header:(()=>{const h=["تاریخ","آبدار","تعداد آبیاری‌شده"];for(let i=1;i<=TOTAL;i++)h.push("آبریز "+i);h.push("وضعیت همگام‌سازی");return h;})(),row:r=>[r.date,r.worker,r.count,...r.state,SYNC_LBL(r)]},
+  pest_fertilizer:{name:"کود و سم",header:["تاریخ","باغ","عملیات","کود/سم","دوز","آفت/هدف","اپراتور","توضیحات","وضعیت همگام‌سازی"],row:r=>[r.date,r.garden,r.op,r.material,r.dose,r.target,r.operator,r.note,SYNC_LBL(r)]},
+  orchard:{name:"امورات باغی",header:["تاریخ","باغ","نوع کار","کارگر","تعداد/مقدار","وضعیت","توضیحات","وضعیت همگام‌سازی"],row:r=>[r.date,r.garden,r.task,r.worker,Number(r.count)||"",r.status,r.note,SYNC_LBL(r)]},
+  inventory:{name:"انبار",header:["تاریخ","کالا","نوع تراکنش","مقدار","واحد","طرف","توضیحات","وضعیت همگام‌سازی"],row:r=>[r.date,r.item,r.type,Number(r.qty)||0,r.unit,r.party,r.desc,SYNC_LBL(r)]},
+  accounting:{name:"حسابداری",header:["تاریخ","نوع","دسته","شرح","طرف حساب","مبلغ (تومان)","وضعیت همگام‌سازی"],row:r=>[r.date,r.type,r.cat,r.desc,r.party,Number(r.amount)||0,SYNC_LBL(r)]},
+  harvest:{name:"برداشت و فروش",header:["تاریخ","محصول","برداشت (kg)","فروش (kg)","قیمت واحد","مبلغ کل","خریدار","توضیحات","وضعیت همگام‌سازی"],row:r=>[r.date,r.product,Number(r.harvested)||0,Number(r.sold)||0,Number(r.price)||0,Number(r.total)||0,r.buyer,r.note,SYNC_LBL(r)]},
+  sheep:{name:"دامداری",header:["تاریخ","دسته‌بندی","تعداد","مبلغ (تومان)","مسئول","توضیحات","وضعیت همگام‌سازی"],row:r=>[r.date,r.category,Number(r.count)||0,Number(r.amount)||0,r.person,r.desc,SYNC_LBL(r)]},
+  security:{name:"امنیت و تردد",header:["تاریخ","نوع حادثه","عنوان","شرح","شناسایی افراد","اقدام انجام‌شده","گزارش‌دهنده","وضعیت همگام‌سازی"],row:r=>[r.date,r.type,r.title,r.desc,r.identified,r.action,r.reporter,SYNC_LBL(r)]}
+};
+function autoFitCols(ws,rows){const widths=rows[0].map((_,ci)=>Math.min(60,Math.max(8,...rows.map(row=>String(row[ci]==null?"":row[ci]).length))+2));ws['!cols']=widths.map(w=>({wch:w}));}
+function buildModuleSheet(wb,key,rowsArr){const def=EXPORT_DEFS[key];const data=[def.header,...rowsArr.map(def.row)];const ws=XLSX.utils.aoa_to_sheet(data);autoFitCols(ws,data);XLSX.utils.book_append_sheet(wb,ws,def.name);}
+function exportConsolidatedExcel(){
+  const scope=document.querySelector('input[name="export-scope"]:checked').value;
+  let range=null;
+  if(scope==="period"){const d=val("rep-date");if(!d){notify("برای خروجی بازه‌ای، تاریخ مرجع گزارش را انتخاب کنید.");return;}range=periodRange(val("rep-period"),d);}
+  const filt=arr=>range?byRange(arr,range):arr;
+  const wb=XLSX.utils.book_new();
+  buildModuleSheet(wb,"attendance",filt(hrRows));
+  buildModuleSheet(wb,"machinery",filt(logRows));
+  buildModuleSheet(wb,"irrigation",filt(irrRows));
+  buildModuleSheet(wb,"pest_fertilizer",filt(sprayRows));
+  buildModuleSheet(wb,"orchard",filt(orchardRows));
+  buildModuleSheet(wb,"inventory",filt(invRows));
+  buildModuleSheet(wb,"accounting",filt(accRows));
+  buildModuleSheet(wb,"harvest",filt(harvRows));
+  buildModuleSheet(wb,"sheep",filt(sheepRows));
+  buildModuleSheet(wb,"security",filt(securityRows));
+  XLSX.writeFile(wb,"Farm_Full_Report_"+(range?val("rep-date").replace(/\//g,"-"):"AllTime")+".xlsx");
+  sessionDirty=false;
+  notify("فایل اکسل جامع دانلود شد.");
+}
+
+/* ===== پشتیبان‌گیری ===== */
+function ensureMeta(arr){arr.forEach(r=>{if(!r.uid)r.uid=genUid();if(typeof r.synced!=="boolean")r.synced=false;});return arr;}
+function backupJSON(){const data=JSON.stringify({hrRows,logRows,invRows,accRows,harvRows,sprayRows,orchardRows,irrRows,sheepRows,securityRows});const blob=new Blob([data],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="farm_backup_"+todayJStr().replace(/\//g,"-")+".json";a.click();URL.revokeObjectURL(a.href);sessionDirty=false;notify("فایل پشتیبان دانلود شد.");}
+function restoreJSON(input){
+  const f=input.files&&input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      hrRows=ensureMeta(d.hrRows||[]);logRows=ensureMeta(d.logRows||[]);invRows=ensureMeta(d.invRows||[]);accRows=ensureMeta(d.accRows||[]);harvRows=ensureMeta(d.harvRows||[]);sprayRows=ensureMeta(d.sprayRows||[]);orchardRows=ensureMeta(d.orchardRows||[]);sheepRows=ensureMeta(d.sheepRows||[]);securityRows=ensureMeta(d.securityRows||[]);
+      irrRows=ensureMeta(d.irrRows||(d.irr&&Array.isArray(d.irr.rows)?d.irr.rows:[]));
+      if(db){
+        dbReady.then(()=>Promise.all(DB_TABLES.map(t=>db.table(t).clear())))
+          .then(()=>Promise.all([db.attendance.bulkPut(hrRows),db.machinery.bulkPut(logRows),db.irrigation.bulkPut(irrRows),db.pest_fertilizer.bulkPut(sprayRows),db.orchard.bulkPut(orchardRows),db.inventory.bulkPut(invRows),db.accounting.bulkPut(accRows),db.harvest.bulkPut(harvRows),db.sheep.bulkPut(sheepRows),db.security.bulkPut(securityRows)]))
+          .catch(()=>{});
+      } else { persistFallback(); }
+      buildGrid();loadIrrForDate(val("irr-date"));renderAll();
+      notify("داده‌ها از فایل پشتیبان بازیابی شد.");
+    }catch(err){notify("فایل پشتیبان نامعتبر است.");}
+  };
+  reader.readAsText(f);input.value="";
+}
+function clearData(){
+  if(!confirm("همه داده‌های ذخیره‌شده پاک شود؟ این عمل قابل بازگشت نیست."))return;
+  hrRows=[];logRows=[];invRows=[];accRows=[];harvRows=[];sprayRows=[];orchardRows=[];irrRows=[];sheepRows=[];securityRows=[];irrState=new Array(TOTAL).fill(0);
+  if(db){dbReady.then(()=>Promise.all(DB_TABLES.map(t=>db.table(t).clear()))).catch(()=>{});}
+  else{try{localStorage.removeItem(STORE_KEY);}catch(e){}}
+  buildGrid();renderAll();sessionDirty=false;
+  notify("همه داده‌ها پاک شد.");
+}
+
+/* ===== راه‌اندازی ===== */
+(function init(){
+  populateSelects();
+  const tStr=todayJStr();
+  ["hr-date","log-date","irr-date","inv-date","acc-date","harv-date","spray-date","orchard-date","sheep-date","sec-date","rep-date"].forEach(id=>setVal(id,tStr));
+  setVal("gs-url",getScriptUrl());
+  initDB().then(()=>{
+    buildGrid();
+    loadIrrForDate(val("irr-date"));
+    renderAll();
+    attachNonNegativeGuards();
+  });
+  document.getElementById("irr-date").addEventListener("change",function(){loadIrrForDate(this.value);});
+  window.addEventListener("beforeunload",function(e){
+    if(sessionDirty||pendingCount()>0){e.preventDefault();e.returnValue="تغییرات ذخیره‌نشده یا همگام‌سازی‌نشده‌ای وجود دارد. آیا مطمئن هستید می‌خواهید خارج شوید؟";return e.returnValue;}
+  });
+})();
+
+/* =====================================================================================
+ * راهنمای همگام‌سازی ابری با گوگل شیت (Google Apps Script Web App)
+ * با قفل خودکار روزهای گذشته — فقط داده‌ی «امروز» قابل ارسال/افزودن است
+ * =====================================================================================
+ *
+ * مرحله ۱ — ساخت گوگل شیت:
+ *   یک Google Sheet خام بسازید (حتی بدون هیچ تبی). تمام تب‌ها، رنگ‌ها، فونت، چیدمان
+ *   راست‌به‌چپ و قفل محافظتی به‌صورت خودکار توسط تابع setupSheet() در پایین ساخته می‌شوند؛
+ *   کافی است مراحل زیر را طی کنید.
+ *
+ * مرحله ۲ — نصب اسکریپت:
+ *   ۱. در همان شیت، از منو Extensions > Apps Script را باز کنید.
+ *   ۲. کل کد بخش Code.gs زیر را کپی و در ادیتور paste کنید (محتوای پیش‌فرض را پاک کنید) و ذخیره کنید.
+ *   ۳. از نوار بالای ادیتور، تابع «setupSheet» را از لیست توابع انتخاب کرده و دکمه ▶ Run را بزنید
+ *      (بار اول مجوز دسترسی به شیت را تأیید کنید). این تابع یک‌بار اجرا می‌شود و:
+ *        - ده تب (attendance, machinery, irrigation, pest_fertilizer, orchard, inventory,
+ *          accounting, harvest, sheep, security) را با سرستون فارسی، رنگ تم هر دفتر،
+ *          فونت Vazirmatn (در صورت نصب در حساب گوگل شما)، چیدمان راست‌به‌چپ و فریز ردیف اول می‌سازد.
+ *        - Conditional Formatting پایه (سبز/قرمز برای حضور و غیبت در تب attendance) را اعمال می‌کند.
+ *        - یک محافظت (Protection) خالی روی کل شیت می‌گذارد که با هر doPost به‌روزرسانی می‌شود
+ *          تا فقط ردیف‌های «امروز» برای ویرایش دستی توسط افراد دیگر باز بمانند.
+ *   ۴. از Deploy > New deployment، نوع را "Web app" انتخاب کنید؛ Execute as: Me و
+ *      Who has access: Anyone را بزنید و Deploy کنید.
+ *   ۵. آدرس .../exec نهایی را در کادر «آدرس وب‌اپلیکیشن گوگل» در تب گزارش مدیریتی این سامانه paste کنید.
+ *
+ * مرحله ۳ — قفل تاریخی (مهم‌ترین بخش این راهنما):
+ *   • doPost هر رکورد ورودی را با «امروز» (به تقویم جلالی، دقیقاً مطابق فرمتی که اپ می‌فرستد:
+ *     "jy/jm/jd") مقایسه می‌کند. اگر تاریخ رکورد با امروز یکی نباشد، درخواست رد می‌شود و
+ *     پاسخ {status:"error", message:"فقط ثبت روز جاری مجاز است"} برمی‌گردد — یعنی اپ هرگز
+ *     نمی‌تواند داده‌ی روزهای گذشته را در شیت بنویسد یا تغییر دهد، حتی اگر کاربر بخواهد.
+ *   • بعد از هر appendRow موفق، تابع lockPastRows اجرا می‌شود: تمام ردیف‌هایی که تاریخ‌شان با
+ *     امروز فرق دارد را در یک Range Protection قرار می‌دهد و تمام ویرایشگرها (Editors) را از
+ *     آن محدوده حذف می‌کند (فقط مالک شیت/اسکریپت می‌تواند آن را ویرایش کند). ردیف‌های «امروز»
+ *     از این محدوده مستثنا هستند، بنابراین مدیر هنوز می‌تواند در صورت نیاز همان روز را
+ *     دستی هم اصلاح کند. روز بعد که اولین رکورد جدید ارسال شود، ردیف‌های «دیروز» هم خودکار قفل می‌شوند.
+ *   • نکته: این قفل از طریق Google Sheets Protected Ranges است، پس برای دیگر افرادی که شیت را
+ *     با دسترسی «Editor» باز می‌کنند واقعاً غیرفعال (read-only) دیده می‌شود؛ خود اسکریپت چون
+ *     "Execute as: Me" دیپلوی شده، با وجود قفل همچنان می‌تواند ردیف‌های روز جاری را اضافه کند.
+ *
+ * --------------------------------- Code.gs (Google Apps Script) ------------------------
+ *
+ * var SHEET_DEFS = [
+ *   { name: "attendance",       title: "حضور و غیاب",      color: "#10B981",
+ *     headers: ["uid","date","worker","timeIn","timeOut","workType","desc","quality","bonus","synced"] },
+ *   { name: "machinery",        title: "ماشین‌آلات",        color: "#7A5736",
+ *     headers: ["uid","date","machine","driver","start","end","usefulHours","category","details","cost","synced"] },
+ *   { name: "irrigation",       title: "آبیاری",            color: "#0EA5E9",
+ *     headers: ["date","worker","count","synced"] },
+ *   { name: "pest_fertilizer",  title: "کود و سم",          color: "#14b8a6",
+ *     headers: ["uid","date","garden","op","material","dose","target","operator","note","synced"] },
+ *   { name: "orchard",          title: "امورات باغی",       color: "#2f9e44",
+ *     headers: ["uid","date","garden","task","worker","count","status","note","synced"] },
+ *   { name: "inventory",        title: "انبارداری",         color: "#D97706",
+ *     headers: ["uid","date","item","type","qty","unit","party","desc","synced"] },
+ *   { name: "accounting",       title: "حسابداری",          color: "#059669",
+ *     headers: ["uid","date","type","cat","amount","party","desc","synced"] },
+ *   { name: "harvest",          title: "برداشت و فروش",     color: "#f59e0b",
+ *     headers: ["uid","date","product","harvested","sold","price","total","buyer","note","synced"] },
+ *   { name: "sheep",            title: "پرورش گوسفند",      color: "#a16207",
+ *     headers: ["uid","date","category","count","amount","person","desc","synced"] },
+ *   { name: "security",         title: "امنیت و تردد",      color: "#475569",
+ *     headers: ["uid","date","type","title","desc","identified","action","reporter","synced"] }
+ * ];
+ *
+ * // یک‌بار اجرا کنید: می‌سازد/می‌آرایدِ هر ۱۰ تب با رنگ، فونت، راست‌به‌چپ، فریز سرستون و فرمت شرطی.
+ * function setupSheet() {
+ *   var ss = SpreadsheetApp.getActiveSpreadsheet();
+ *   ss.setRtl && ss.setRtl(true); // در صورت پشتیبانی نسخه؛ در غیر این صورت از File > Settings > Right to left استفاده کنید
+ *   SHEET_DEFS.forEach(function (def) {
+ *     var sheet = ss.getSheetByName(def.name) || ss.insertSheet(def.name);
+ *     sheet.getRange(1, 1, 1, def.headers.length).setValues([def.headers])
+ *       .setFontWeight("bold").setFontColor("#ffffff").setBackground(def.color)
+ *       .setFontFamily("Vazirmatn");
+ *     sheet.setFrozenRows(1);
+ *     try { sheet.setRightToLeft(true); } catch (e) {}
+ *     sheet.autoResizeColumns(1, def.headers.length);
+ *   });
+ *   // فرمت شرطی نمونه روی تب attendance: غیبت قرمز کم‌رنگ / حضور سبز کم‌رنگ (ستون workType، حرف F)
+ *   var att = ss.getSheetByName("attendance");
+ *   if (att) {
+ *     var rng = att.getRange("F2:F2000");
+ *     var rules = att.getConditionalFormatRules();
+ *     rules.push(SpreadsheetApp.newConditionalFormatRule()
+ *       .whenTextContains("غیبت").setBackground("#FECACA").setRanges([rng]).build());
+ *     rules.push(SpreadsheetApp.newConditionalFormatRule()
+ *       .whenTextContains("حضور").setBackground("#BBF7D0").setRanges([rng]).build());
+ *     att.setConditionalFormatRules(rules);
+ *   }
+ *   SpreadsheetApp.flush();
+ *   Browser.msgBox("راه‌اندازی شیت با موفقیت انجام شد. اکنون می‌توانید با Deploy > New deployment وب‌اپ را منتشر کنید.");
+ * }
+ *
+ * // تاریخ جلالی امروز را به‌همان فرمتی که اپ می‌فرستد برمی‌گرداند: "jy/jm/jd"
+ * function todayJalaali_() {
+ *   var tz = "Asia/Tehran";
+ *   var now = new Date();
+ *   // محاسبه جلالی از روی میلادی (الگوریتم استاندارد jalaali، بدون وابستگی خارجی)
+ *   var gy = Number(Utilities.formatDate(now, tz, "yyyy"));
+ *   var gm = Number(Utilities.formatDate(now, tz, "MM"));
+ *   var gd = Number(Utilities.formatDate(now, tz, "dd"));
+ *   function div(a, b) { return Math.floor(a / b); }
+ *   var jy = gy <= 1600 ? 0 : 979, gy2 = gy <= 1600 ? gy - 621 : gy - 1600;
+ *   var gy3 = (gm > 2) ? (gy2 + 1) : gy2;
+ *   var days = (365 * gy2) + (div((gy3 + 3), 4)) - (div((gy3 + 99), 100)) + (div((gy3 + 399), 400)) - 80 + gd +
+ *     [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334][gm - 1];
+ *   jy += 33 * div(days, 12053); days %= 12053;
+ *   jy += 4 * div(days, 1461); days %= 1461;
+ *   if (days >= 366) { jy += div(days - 1, 365); days = (days - 1) % 365; }
+ *   var jm, jd;
+ *   if (days < 186) { jm = 1 + div(days, 31); jd = (days % 31) + 1; }
+ *   else { jm = 7 + div(days - 186, 30); jd = ((days - 186) % 30) + 1; }
+ *   function p2(n) { return (n < 10 ? "0" : "") + n; }
+ *   return jy + "/" + p2(jm) + "/" + p2(jd);
+ * }
+ *
+ * function doPost(e) {
+ *   try {
+ *     var payload = JSON.parse(e.postData.contents);
+ *     var moduleName = payload.module;
+ *     var record = payload.record || {};
+ *     var today = todayJalaali_();
+ *     if (String(record.date) !== today) {
+ *       return ContentService.createTextOutput(JSON.stringify({
+ *         status: "error", message: "فقط ثبت/ارسال داده‌ی روز جاری (" + today + ") مجاز است."
+ *       })).setMimeType(ContentService.MimeType.JSON);
+ *     }
+ *     var ss = SpreadsheetApp.getActiveSpreadsheet();
+ *     var sheet = ss.getSheetByName(moduleName) || ss.insertSheet(moduleName);
+ *     var keys = Object.keys(record);
+ *     if (sheet.getLastRow() === 0) {
+ *       sheet.appendRow(keys);
+ *       sheet.getRange(1, 1, 1, keys.length).setFontWeight("bold").setFontColor("#ffffff");
+ *     }
+ *     var header = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+ *     var rowValues = header.map(function (h) {
+ *       var v = record[h];
+ *       if (Array.isArray(v)) return v.join(",");
+ *       return (v === undefined || v === null) ? "" : v;
+ *     });
+ *     sheet.appendRow(rowValues);
+ *     lockPastRows_(sheet, header.indexOf("date"), today);
+ *     return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
+ *       .setMimeType(ContentService.MimeType.JSON);
+ *   } catch (err) {
+ *     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: String(err) }))
+ *       .setMimeType(ContentService.MimeType.JSON);
+ *   }
+ * }
+ *
+ * // هر ردیفی که ستون تاریخش با امروز فرق دارد را قفل می‌کند؛ ردیف‌های امروز همچنان قابل‌ویرایش می‌مانند.
+ * function lockPastRows_(sheet, dateColIndex, today) {
+ *   if (dateColIndex < 0) return;
+ *   var lastRow = sheet.getLastRow();
+ *   if (lastRow < 2) return;
+ *   var values = sheet.getRange(2, dateColIndex + 1, lastRow - 1, 1).getValues();
+ *   var pastRows = [];
+ *   for (var i = 0; i < values.length; i++) {
+ *     if (String(values[i][0]) !== today && String(values[i][0]) !== "") pastRows.push(i + 2);
+ *   }
+ *   // محافظت‌های قبلیِ همین برگه را پاک و دوباره روی محدوده‌ی به‌روزِ ردیف‌های گذشته اعمال می‌کنیم
+ *   var existing = sheet.getProtections(SpreadsheetApp.ProtectionType.RANGE);
+ *   for (var p = 0; p < existing.length; p++) {
+ *     if (existing[p].getDescription() === "farm-history-lock") existing[p].remove();
+ *   }
+ *   if (!pastRows.length) return;
+ *   // محدوده‌های پیوسته را گروه می‌کنیم تا تعداد Protection کم بماند
+ *   var ranges = [];
+ *   var start = pastRows[0], prev = pastRows[0];
+ *   for (var r = 1; r <= pastRows.length; r++) {
+ *     var cur = pastRows[r];
+ *     if (cur === prev + 1) { prev = cur; continue; }
+ *     ranges.push(sheet.getRange(start, 1, prev - start + 1, sheet.getLastColumn()));
+ *     start = cur; prev = cur;
+ *   }
+ *   ranges.forEach(function (rng) {
+ *     var protection = rng.protect().setDescription("farm-history-lock");
+ *     protection.setWarningOnly(false);
+ *     var me = Session.getEffectiveUser();
+ *     protection.removeEditors(protection.getEditors());
+ *     if (protection.canEdit()) protection.addEditor(me);
+ *   });
+ * }
+ *
+ * function doGet(e) {
+ *   return ContentService.createTextOutput(JSON.stringify({ status: "ok", message: "Farm sync endpoint is alive." }))
+ *     .setMimeType(ContentService.MimeType.JSON);
+ * }
+ *
+ * --------------------------------------------------------------------------------------
+ * نکته CORS: این سامانه برای جلوگیری از پری‌فلایت (preflight) درخواست‌های OPTIONS — که
+ * Apps Script Web App به‌خوبی پاسخ نمی‌دهد — درخواست POST را با هدر "Content-Type: text/plain"
+ * ارسال می‌کند (یک Simple Request استاندارد). Apps Script محتوای متنی را در e.postData.contents
+ * دریافت و JSON.parse می‌کند؛ بنابراین نیازی به تنظیم دستی هدر CORS نیست و وب‌اپ با تنظیمات
+ * "Execute as: Me" / "Who has access: Anyone" به‌صورت پیش‌فرض از دامنه‌های دیگر قابل fetch است.
+ *
+ * نکته منطقه‌ی زمانی: تابع todayJalaali_ از منطقه‌ی زمانی "Asia/Tehran" استفاده می‌کند تا "امروز"
+ * در شیت همیشه با "امروز" داخل اپ (که بر مبنای ساعت دستگاه کاربر است) یکی باشد. اگر مزرعه در
+ * منطقه‌ی زمانی دیگری مدیریت می‌شود، همین رشته را در بالای تابع تغییر دهید.
+ * ===================================================================================== */
+</script></body></html>

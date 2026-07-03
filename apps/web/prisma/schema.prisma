@@ -1,0 +1,189 @@
+// Prisma schema for the Hosseinabad Shahkol farm management backend.
+// Every operational record carries a client-generated `uid` (unique) so the
+// offline-first sync endpoint can `upsert` on it — retries/duplicate sends
+// from a flaky farm connection never create duplicate rows.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Owner {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Attendance {
+  id           String    @id @default(cuid())
+  uid          String    @unique
+  date         String
+  worker       String
+  status       String // present | leave
+  leaveType    String? // paid | unpaid
+  morningIn    String?
+  morningOut   String?
+  morningType  String?
+  morningDesc  String?
+  morningOk    Boolean?
+  morningBonus Int?
+  eveningIn    String?
+  eveningOut   String?
+  eveningType  String?
+  eveningDesc  String?
+  eveningOk    Boolean?
+  eveningBonus Int?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([date])
+  @@index([worker])
+}
+
+model Machinery {
+  id          String   @id @default(cuid())
+  uid         String   @unique
+  date        String
+  machine     String
+  driver      String?
+  start       Float?
+  end         Float?
+  usefulHours Float?
+  category    String
+  details     String?
+  cost        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date])
+}
+
+model Irrigation {
+  id        String   @id @default(cuid())
+  uid       String   @unique
+  date      String   @unique
+  worker    String?
+  state     Int[]
+  count     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model PestFertilizer {
+  id        String   @id @default(cuid())
+  uid       String   @unique
+  date      String
+  garden    String
+  op        String
+  material  String?
+  dose      String?
+  target    String?
+  operator  String?
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model Orchard {
+  id        String   @id @default(cuid())
+  uid       String   @unique
+  date      String
+  garden    String
+  task      String
+  worker    String?
+  count     Float?
+  status    String
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model Inventory {
+  id        String   @id @default(cuid())
+  uid       String   @unique
+  date      String
+  item      String
+  type      String // ورود | خروج
+  qty       Float
+  unit      String
+  party     String?
+  desc      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([item])
+}
+
+model Accounting {
+  id        String   @id @default(cuid())
+  uid       String   @unique
+  date      String
+  type      String // درآمد | هزینه
+  category  String
+  amount    Int
+  party     String?
+  desc      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model Harvest {
+  id        String   @id @default(cuid())
+  uid       String   @unique
+  date      String
+  product   String
+  harvested Float?
+  sold      Float?
+  price     Int?
+  buyer     String?
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model Sheep {
+  id        String   @id @default(cuid())
+  uid       String   @unique
+  date      String
+  category  String
+  count     Int
+  amount    Int?
+  person    String?
+  desc      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+model Security {
+  id          String   @id @default(cuid())
+  uid         String   @unique
+  date        String
+  type        String
+  title       String
+  desc        String?
+  identified  String?
+  action      String?
+  reporter    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date])
+}

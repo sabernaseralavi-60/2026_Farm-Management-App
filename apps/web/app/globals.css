@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-vazirmatn), "Vazirmatn", sans-serif;
+
+  --color-sand-50: #faf8f2;
+  --color-sand-100: #f4f1e9;
+  --color-sand-200: #eae3d4;
+  --color-sand-300: #dcd2bd;
+
+  --color-bark-500: #7a5736;
+  --color-bark-600: #69492c;
+  --color-bark-700: #573b23;
+  --color-bark-800: #46301d;
+
+  --color-leaf-50: #ecfdf5;
+  --color-leaf-500: #10b981;
+  --color-leaf-600: #059669;
+  --color-leaf-700: #047857;
+
+  --color-water-50: #f0f9ff;
+  --color-water-400: #38bdf8;
+  --color-water-500: #0ea5e9;
+  --color-water-600: #0284c7;
+  --color-water-700: #0369a1;
+
+  --color-gold-50: #fffbeb;
+  --color-gold-500: #d97706;
+  --color-gold-600: #b45309;
+  --color-gold-700: #92400e;
+
+  --shadow-glass: 0 8px 32px rgba(70, 48, 29, 0.14);
+  --shadow-glass-lg: 0 20px 50px rgba(70, 48, 29, 0.18);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: linear-gradient(160deg, var(--color-sand-50) 0%, var(--color-sand-100) 60%, #f0ece0 100%);
+  color: var(--color-bark-800);
+  min-height: 100vh;
+}
+
+/* ===== Glassmorphism primitives ===== */
+.glass {
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-glass-lg);
+}
+
+/* ===== Fluid type scale, independent of the user's device font-size ===== */
+.text-fluid-xs { font-size: clamp(0.78rem, 0.74rem + 0.2vw, 0.86rem); }
+.text-fluid-sm { font-size: clamp(0.88rem, 0.84rem + 0.2vw, 0.98rem); }
+.text-fluid-base { font-size: clamp(1rem, 0.95rem + 0.25vw, 1.1rem); }
+.text-fluid-lg { font-size: clamp(1.15rem, 1.05rem + 0.5vw, 1.4rem); }
+.text-fluid-xl { font-size: clamp(1.4rem, 1.2rem + 1vw, 1.9rem); }
+.text-fluid-2xl { font-size: clamp(1.8rem, 1.5rem + 1.6vw, 2.6rem); }
+
+/* ===== Touch-friendly baseline: every interactive control stays >=44px tall ===== */
+button, .btn, input, select, textarea, a.tap-target {
+  min-height: 44px;
+}
+textarea { min-height: 88px; }
+
+::-webkit-scrollbar { height: 10px; width: 10px; }
+::-webkit-scrollbar-thumb { background: var(--color-sand-300); border-radius: 999px; }
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up { animation: fade-in-up 0.4s ease both; }
+
+@keyframes shimmer {
+  0% { background-position: 140% 0; }
+  100% { background-position: -40% 0; }
+}
+.animate-shimmer {
+  background-size: 220% 100%;
+  animation: shimmer 5s linear infinite;
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+.animate-pop { animation: pop 0.4s ease; }
+
+/* ===== Responsive record table: real table on desktop, stacked cards on mobile ===== */
+@media (max-width: 720px) {
+  .data-table thead { display: none; }
+  .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; }
+  .data-table { border: none; }
+  .data-table tbody tr {
+    margin: 0 0 0.85rem;
+    border: 1px solid var(--color-sand-200);
+    border-radius: 1.1rem;
+    padding: 0.35rem;
+    box-shadow: 0 2px 12px rgba(86, 59, 35, 0.08);
+    background: #fff;
+  }
+  .data-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px dashed var(--color-sand-200);
+    text-align: left;
+  }
+  .data-table td:last-child { border-bottom: none; }
+  .data-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--color-bark-600);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+  .data-table td:not([data-label])::before { content: none; }
+}
