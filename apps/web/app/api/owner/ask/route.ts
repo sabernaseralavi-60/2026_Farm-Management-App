@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { buildAdminSnapshot } from "@/lib/admin-analytics";
 import { askFreeLLM, isLLMConfigured } from "@/lib/llm";
-import { requireAdminSession } from "@/lib/session";
+import { getOwnerSession } from "@/lib/session";
 
 const SYSTEM_PROMPT = `تو دستیار تحلیل‌گر داده‌ی «سامانه مدیریت مزرعه حسین‌آباد شهکل» هستی.
 یک خلاصه‌ی عددیِ از پیش‌محاسبه‌شده (JSON) از دیتابیس واقعی مزرعه در بازه‌ی زمانی انتخابی در اختیار داری؛ همه‌ی اعداد آن دقیق و واقعی‌اند.
@@ -12,8 +12,8 @@ const SYSTEM_PROMPT = `تو دستیار تحلیل‌گر داده‌ی «سا�
 در پاسخ می‌توانی از فهرست یا جدول متنی کوتاه استفاده کنی.`;
 
 export async function POST(request: Request) {
-  const session = await requireAdminSession();
-  if (!session) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  const session = await getOwnerSession();
+  if (!session) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 
   if (!isLLMConfigured()) {
     return NextResponse.json(
