@@ -35,7 +35,7 @@ export async function askFreeLLM(system: string, user: string): Promise<LLMResul
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
         "HTTP-Referer": "https://farm-management.local",
-        "X-Title": "Farm Management — Admin AI",
+        "X-Title": "Farm Management - Admin AI",
       },
       body: JSON.stringify({
         model,
