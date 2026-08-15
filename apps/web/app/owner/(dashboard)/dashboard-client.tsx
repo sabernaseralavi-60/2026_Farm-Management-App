@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { RangePicker } from "@/components/owner/range-picker";
 import { JalaliDatePicker } from "@/components/ui/jalali-date-picker";
-import { d2j, j2d, jalaaliWeekday, money, pad2, parseJalaaliStr, toFa, todayJStr } from "@/lib/jalaali";
+import { daysAgo } from "@/lib/date-ranges";
+import { money, toFa, todayJStr } from "@/lib/jalaali";
 import { DailyDigest, type DayData } from "./daily-digest";
 import { KpiCard, RangeCharts } from "./owner-charts";
 
@@ -25,26 +27,6 @@ type RangeData = {
   irrigationSeries: { date: string; coverage: number }[];
   attendanceSeries: { date: string; workers: number }[];
 };
-
-function daysAgo(n: number): string {
-  const t = parseJalaaliStr(todayJStr())!;
-  const jdn = j2d(t.jy, t.jm, t.jd) - n;
-  const j = d2j(jdn);
-  return `${j.jy}/${pad2(j.jm)}/${pad2(j.jd)}`;
-}
-
-function startOfMonth(): string {
-  const t = parseJalaaliStr(todayJStr())!;
-  return `${t.jy}/${pad2(t.jm)}/01`;
-}
-
-function startOfWeek(): string {
-  const t = parseJalaaliStr(todayJStr())!;
-  const jdn = j2d(t.jy, t.jm, t.jd);
-  const weekday = jalaaliWeekday(t.jy, t.jm, t.jd);
-  const j = d2j(jdn - weekday);
-  return `${j.jy}/${pad2(j.jm)}/${pad2(j.jd)}`;
-}
 
 export function OwnerDashboardClient() {
   const [mode, setMode] = useState<"day" | "range">("day");
@@ -111,27 +93,14 @@ export function OwnerDashboardClient() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="w-40">
-              <JalaliDatePicker value={from} onChange={setFrom} placeholder="از تاریخ" />
-            </div>
-            <span className="text-bark-400">تا</span>
-            <div className="w-40">
-              <JalaliDatePicker value={to} onChange={setTo} placeholder="تا تاریخ" />
-            </div>
-            <div className="flex gap-1">
-              {[
-                { label: "۷ روز اخیر", onClick: () => { setFrom(daysAgo(7)); setTo(todayJStr()); } },
-                { label: "این هفته", onClick: () => { setFrom(startOfWeek()); setTo(todayJStr()); } },
-                { label: "این ماه", onClick: () => { setFrom(startOfMonth()); setTo(todayJStr()); } },
-                { label: "۳۰ روز اخیر", onClick: () => { setFrom(daysAgo(30)); setTo(todayJStr()); } },
-              ].map((p) => (
-                <button key={p.label} type="button" onClick={p.onClick} className="rounded-lg bg-sand-100 px-3 py-2 text-xs font-semibold text-bark-700 hover:bg-sand-200">
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <RangePicker
+            from={from}
+            to={to}
+            onChange={(f, t) => {
+              setFrom(f);
+              setTo(t);
+            }}
+          />
         )}
 
         {loading && <span className="mr-auto text-xs text-bark-400">در حال بارگذاری...</span>}

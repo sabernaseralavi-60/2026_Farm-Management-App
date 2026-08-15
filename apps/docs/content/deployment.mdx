@@ -22,7 +22,7 @@ npx prisma dev
 cd apps/web
 npm install
 npx prisma migrate deploy   # اعمال migration روی دیتابیس
-npm run db:seed             # ساخت اکانت مالک از روی OWNER_EMAIL / OWNER_PASSWORD در .env
+npm run db:seed             # ساخت اکانت مالک/ادمین از روی OWNER_*/ADMIN_* در .env
 ```
 
 ## ۳. متغیرهای محیطی لازم
@@ -30,8 +30,12 @@ npm run db:seed             # ساخت اکانت مالک از روی OWNER_EMA
 | متغیر | توضیح |
 | --- | --- |
 | `DATABASE_URL` | رشته‌ی اتصال PostgreSQL (Neon یا هر Postgres دیگر) |
-| `AUTH_SECRET` | یک رشته‌ی تصادفی برای امضای نشست ورود مالک — با `openssl rand -base64 32` بسازید |
-| `OWNER_EMAIL` / `OWNER_PASSWORD` | ایمیل و رمز عبور اولیه‌ی مالک، فقط برای اسکریپت seed لازم است |
+| `AUTH_SECRET` | یک رشته‌ی تصادفی برای امضای نشست ورود مالک/ادمین — با `openssl rand -base64 32` بسازید |
+| `OWNER_EMAIL` / `OWNER_PASSWORD` | ایمیل و رمز عبور اولیه‌ی مالک مزرعه، فقط برای اسکریپت seed لازم است |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | ایمیل و رمز عبور اولیه‌ی ادمین مدیریت (اختیاری — اگر خالی بماند حساب ادمین ساخته نمی‌شود) |
+| `FARM_PIN` | پین مشترک ورود اپ کارگری (`/gate`) — جدا از ورود مالک/ادمین |
+| `OPENROUTER_API_KEY` | کلید رایگان از [openrouter.ai/keys](https://openrouter.ai/keys) برای تب «پرسش هوشمند» در پنل ادمین — اختیاری |
+| `OPENROUTER_MODEL` | شناسه‌ی مدل OpenRouter (پیش‌فرض یک مدل `:free`) — اختیاری |
 
 ## ۴. اجرای محلی
 

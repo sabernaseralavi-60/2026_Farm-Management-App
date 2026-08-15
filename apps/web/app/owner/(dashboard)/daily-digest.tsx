@@ -143,7 +143,7 @@ export function DailyDigest({ data }: { data: DayData }) {
         <Section icon="💧" title="آبیاری" empty={false}>
           <Row>
             <span className="font-semibold">{data.irrigation.worker || "—"}</span>
-            <span className="text-water-700">{toFa(data.irrigation.count)} / ۲۰۰ آبریز</span>
+            <span className="text-water-700">{toFa(data.irrigation.count)} / ۴۳ باغ</span>
           </Row>
         </Section>
       )}

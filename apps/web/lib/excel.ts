@@ -1,7 +1,7 @@
 import ExcelJS from "exceljs";
 import type { AllModulesData, Range } from "./report";
 import { byRange } from "./report";
-import { IRRIGATION_TOTAL } from "./reference-data";
+import { IRRIGATION_GARDEN_TOTAL } from "./reference-data";
 import type { Synced } from "./types";
 
 const syncLabel = (r: Synced) => (r.synced ? "همگام" : "محلی");
@@ -13,8 +13,8 @@ interface SheetDef<T> {
 }
 
 function defs(): { [K in keyof AllModulesData]: SheetDef<AllModulesData[K][number]> } {
-  const irrigationHeader = ["تاریخ", "آبدار", "تعداد آبیاری‌شده"];
-  for (let i = 1; i <= IRRIGATION_TOTAL; i++) irrigationHeader.push("آبریز " + i);
+  const irrigationHeader = ["تاریخ", "آبدار", "تعداد باغ آبیاری‌شده"];
+  for (let i = 1; i <= IRRIGATION_GARDEN_TOTAL; i++) irrigationHeader.push("باغ " + i);
   irrigationHeader.push("وضعیت همگام‌سازی");
 
   return {
@@ -43,7 +43,11 @@ function defs(): { [K in keyof AllModulesData]: SheetDef<AllModulesData[K][numbe
     irrigation: {
       name: "آبیاری",
       header: irrigationHeader,
-      row: (r) => [r.date, r.worker, r.count, ...r.state, syncLabel(r)],
+      row: (r) => {
+        const set = new Set(r.gardens);
+        const flags = Array.from({ length: IRRIGATION_GARDEN_TOTAL }, (_, i) => (set.has(i + 1) ? 1 : 0));
+        return [r.date, r.worker, r.count, ...flags, syncLabel(r)];
+      },
     },
     spray: {
       name: "کود و سم",

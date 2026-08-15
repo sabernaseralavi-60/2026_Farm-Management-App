@@ -69,7 +69,7 @@ export function RangeCharts({ moneySeries, irrigationSeries, attendanceSeries }:
         )}
       </ChartCard>
 
-      <ChartCard title="روند پوشش آبیاری" subtitle="درصد آبریزهای آبیاری‌شده از ۲۰۰ مورد">
+      <ChartCard title="روند پوشش آبیاری" subtitle="درصد باغ‌های آبیاری‌شده از ۴۳ باغ">
         {irrigationSeries.length === 0 ? (
           <EmptyState text="آبیاری‌ای در این بازه بایگانی نشده است." />
         ) : (

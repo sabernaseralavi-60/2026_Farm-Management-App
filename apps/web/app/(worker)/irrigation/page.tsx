@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { GuideStep } from "@/components/irrigation/guide-step";
+import { ReviewStep } from "@/components/irrigation/review-step";
+import { ZoneStep } from "@/components/irrigation/zone-step";
 import { EditableRecordTable, type RecordColumn } from "@/components/ui/editable-record-table";
 import { FieldWrap, TextInput } from "@/components/ui/fields";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -10,80 +12,98 @@ import { ModuleHero } from "@/components/ui/module-hero";
 import { isDateEditable } from "@/lib/date-policy";
 import { toFa, todayJStr } from "@/lib/jalaali";
 import { findModuleMeta } from "@/lib/module-meta";
-import { IRRIGATION_TOTAL } from "@/lib/reference-data";
+import { IRRIGATION_GARDEN_TOTAL, IRRIGATION_ZONES } from "@/lib/reference-data";
 import { useModuleStore } from "@/lib/store";
 import type { IrrigationRecord } from "@/lib/types";
 
 const meta = findModuleMeta("irrigation")!;
 
+type Zone = 1 | 2 | 3 | 4;
+type Step = "guide" | "zone" | "review";
+
 export default function IrrigationPage() {
   const { rows, loaded, load, add, update, remove } = useModuleStore<IrrigationRecord>("irrigation")();
   const [date, setDate] = useState(todayJStr());
   const [worker, setWorker] = useState("");
-  const [state, setState] = useState<number[]>(() => new Array(IRRIGATION_TOTAL).fill(0));
-  const [rangeFrom, setRangeFrom] = useState("");
-  const [rangeTo, setRangeTo] = useState("");
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [step, setStep] = useState<Step>("guide");
+  const [activeZone, setActiveZone] = useState<Zone>(1);
 
   useEffect(() => {
     if (!loaded) void load();
   }, [loaded, load]);
 
   // Whenever the selected date changes (or the archive finishes loading),
-  // sync the editable grid to that day's saved record. Adjusting state
-  // during render — rather than in a useEffect — keeps this a single commit
-  // instead of a stale-then-corrected flash, and the grid stays user-editable
-  // afterwards (this isn't a pure derived value).
+  // sync the wizard to that day's saved record. Adjusting state during
+  // render — rather than in a useEffect — keeps this a single commit
+  // instead of a stale-then-corrected flash.
   const syncKey = `${date}|${loaded}`;
   const [lastSyncKey, setLastSyncKey] = useState(syncKey);
   if (syncKey !== lastSyncKey) {
     setLastSyncKey(syncKey);
     const existing = rows.find((r) => r.date === date);
     setWorker(existing?.worker ?? "");
-    setState(existing ? existing.state.slice() : new Array(IRRIGATION_TOTAL).fill(0));
+    setSelected(new Set(existing?.gardens ?? []));
+    setStep("guide");
   }
 
-  const count = useMemo(() => state.reduce((a, b) => a + b, 0), [state]);
   const locked = !isDateEditable(date);
+  const count = selected.size;
+  const zone = IRRIGATION_ZONES.find((z) => z.zone === activeZone)!;
 
-  function toggleCell(i: number) {
+  function toggleGarden(n: number) {
     if (locked) return;
-    setState((s) => s.map((v, idx) => (idx === i ? (v ? 0 : 1) : v)));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(n)) next.delete(n);
+      else next.add(n);
+      return next;
+    });
   }
 
-  function applyRange() {
+  function setZoneAll(z: typeof zone, on: boolean) {
     if (locked) return;
-    let f = parseInt(rangeFrom, 10);
-    let t = parseInt(rangeTo, 10);
-    if (Number.isNaN(f) || Number.isNaN(t)) return alert("بازه را به‌درستی وارد کنید.");
-    if (f > t) [f, t] = [t, f];
-    f = Math.max(1, f);
-    t = Math.min(IRRIGATION_TOTAL, t);
-    setState((s) => s.map((v, idx) => (idx + 1 >= f && idx + 1 <= t ? 1 : v)));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      z.gardens.forEach((g) => (on ? next.add(g.n) : next.delete(g.n)));
+      return next;
+    });
   }
 
-  function clearAll() {
-    setState(new Array(IRRIGATION_TOTAL).fill(0));
+  function goToZone(z: Zone) {
+    setActiveZone(z);
+    setStep("zone");
   }
 
   async function save() {
     if (!date) return alert("تاریخ را انتخاب کنید.");
     if (locked) return alert("این روز قفل شده و دیگر قابل ثبت/ویرایش نیست.");
-    const record: IrrigationRecord = { uid: date, synced: false, date, worker: worker.trim(), state: state.slice(), count };
+    const gardens = [...selected].sort((a, b) => a - b);
+    const record: IrrigationRecord = { uid: date, synced: false, date, worker: worker.trim(), gardens, count: gardens.length };
     const exists = rows.some((r) => r.uid === date);
     if (exists) await update(record);
     else await add(record);
-    alert(`آبیاری روز ${date} بایگانی شد.`);
+    alert(`آبیاری روز ${toFa(date)} با ${toFa(gardens.length)} باغ بایگانی شد.`);
   }
 
   function loadRow(row: IrrigationRecord) {
     setDate(row.date);
+    setStep("guide");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const columns: RecordColumn<IrrigationRecord>[] = [
     { key: "date", label: "تاریخ", render: (r) => <span className="font-semibold">{toFa(r.date)}</span> },
     { key: "worker", label: "آبدار", render: (r) => r.worker || "—" },
-    { key: "count", label: "تعداد آبیاری‌شده", render: (r) => <span className="font-bold text-water-700">{toFa(r.count)} / {toFa(IRRIGATION_TOTAL)}</span> },
+    {
+      key: "count",
+      label: "باغ‌های آبیاری‌شده",
+      render: (r) => (
+        <span className="font-bold text-water-700">
+          {toFa(r.count)} / {toFa(IRRIGATION_GARDEN_TOTAL)}
+        </span>
+      ),
+    },
   ];
 
   return (
@@ -96,7 +116,13 @@ export default function IrrigationPage() {
             <JalaliDatePicker value={date} onChange={setDate} />
           </FieldWrap>
           <FieldWrap label="نام آبدار شیفت">
-            <TextInput list="workers-list" value={worker} onChange={(e) => setWorker(e.target.value)} placeholder="نام آبدار" disabled={locked} />
+            <TextInput
+              list="workers-list"
+              value={worker}
+              onChange={(e) => setWorker(e.target.value)}
+              placeholder="نام آبدار"
+              disabled={locked}
+            />
           </FieldWrap>
         </div>
 
@@ -106,46 +132,44 @@ export default function IrrigationPage() {
           </div>
         )}
 
-        <div className="mb-5 rounded-2xl border border-water-500/30 bg-water-500/10 p-4">
-          <div className="flex flex-wrap items-end gap-3">
-            <FieldWrap label="از آبریز">
-              <TextInput type="number" min={1} max={IRRIGATION_TOTAL} value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)} className="w-24" placeholder="۱۰" disabled={locked} />
-            </FieldWrap>
-            <FieldWrap label="تا آبریز">
-              <TextInput type="number" min={1} max={IRRIGATION_TOTAL} value={rangeTo} onChange={(e) => setRangeTo(e.target.value)} className="w-24" placeholder="۵۰" disabled={locked} />
-            </FieldWrap>
-            <Button type="button" variant="water" onClick={applyRange} disabled={locked}>💧 انتخاب بازه‌ای</Button>
-            <Button type="button" variant="soft" onClick={clearAll} disabled={locked}>🧹 پاک کردن</Button>
-            <div className="mr-auto flex items-center gap-2 rounded-xl border border-water-500/30 bg-white px-4 py-2.5 font-semibold text-water-700">
-              💧 آبیاری‌شده: {toFa(count)} / {toFa(IRRIGATION_TOTAL)}
-            </div>
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-water-500/30 bg-water-500/10 px-4 py-3">
+          <div className="flex items-center gap-2 whitespace-nowrap font-bold text-water-700">
+            💧 {toFa(count)} / {toFa(IRRIGATION_GARDEN_TOTAL)} باغ در حال آبیاری امروز
+          </div>
+          <div className="h-2 min-w-[120px] flex-1 overflow-hidden rounded-full bg-white/70">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-water-400 to-water-600 transition-all duration-500"
+              style={{ width: `${(count / IRRIGATION_GARDEN_TOTAL) * 100}%` }}
+            />
           </div>
         </div>
 
-        <div className="mb-6 grid grid-cols-[repeat(auto-fill,minmax(42px,1fr))] gap-2">
-          {state.map((v, i) => (
-            <button
-              key={i}
-              type="button"
-              disabled={locked}
-              onClick={() => toggleCell(i)}
-              className={
-                "aspect-square rounded-xl border text-xs font-bold transition-all " +
-                (locked
-                  ? "cursor-not-allowed border-sand-200 bg-sand-100 text-bark-300"
-                  : v
-                    ? "scale-105 border-water-700 bg-gradient-to-br from-water-400 to-water-600 text-white shadow-[0_0_0_3px_rgba(14,165,233,.18),0_6px_14px_rgba(2,132,199,.35)]"
-                    : "border-sand-300 bg-sand-200/70 text-bark-500 hover:-translate-y-0.5")
-              }
-            >
-              {toFa(i + 1)}
-            </button>
-          ))}
-        </div>
+        {step === "guide" && <GuideStep selected={selected} onPickZone={goToZone} onReview={() => setStep("review")} />}
 
-        <Button type="button" size="lg" className="w-full" onClick={save} disabled={locked}>
-          {locked ? "🔒 این روز قفل است" : "💾 ثبت / به‌روزرسانی آبیاری این روز"}
-        </Button>
+        {step === "zone" && (
+          <ZoneStep
+            zone={zone}
+            selected={selected}
+            locked={locked}
+            onToggle={toggleGarden}
+            onSelectAll={() => setZoneAll(zone, true)}
+            onClearZone={() => setZoneAll(zone, false)}
+            onSwitchZone={setActiveZone}
+            onBackToGuide={() => setStep("guide")}
+            onReview={() => setStep("review")}
+          />
+        )}
+
+        {step === "review" && (
+          <ReviewStep
+            selected={selected}
+            locked={locked}
+            onRemove={toggleGarden}
+            onEditZone={goToZone}
+            onBack={() => setStep("guide")}
+            onSubmit={save}
+          />
+        )}
       </GlassCard>
 
       <GlassCard className="p-0 overflow-hidden">

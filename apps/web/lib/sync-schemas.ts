@@ -39,7 +39,7 @@ const irrigationSchema = z.object({
   uid: z.string().min(1),
   date: z.string().min(1),
   worker: z.string().optional().default(""),
-  state: z.array(z.number()),
+  gardens: z.array(z.number()),
   count: z.number(),
 });
 
@@ -175,7 +175,7 @@ export function toPrismaData(module: ModuleKey, data: Record<string, unknown>) {
     }
     case "irrigation": {
       const d = data as z.infer<typeof irrigationSchema>;
-      return { date: d.date, worker: d.worker, state: d.state, count: d.count };
+      return { date: d.date, worker: d.worker, gardens: d.gardens, count: d.count };
     }
     case "pest_fertilizer": {
       const d = data as z.infer<typeof pestFertilizerSchema>;

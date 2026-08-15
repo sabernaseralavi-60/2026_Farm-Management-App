@@ -27,9 +27,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "invalid credentials" }, { status: 401 });
   }
 
-  const token = await createSessionToken(owner.email);
+  const role = owner.role === "admin" ? "admin" : "owner";
+  const token = await createSessionToken(owner.email, role);
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, SESSION_COOKIE_OPTIONS);
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, role });
 }

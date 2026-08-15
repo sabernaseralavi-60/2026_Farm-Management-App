@@ -2,23 +2,30 @@ import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
 
-async function main() {
-  const email = process.env.OWNER_EMAIL;
-  const password = process.env.OWNER_PASSWORD;
+async function upsertAccount(role: "owner" | "admin", email: string | undefined, password: string | undefined) {
+  if (!email || !password) return null;
+  const passwordHash = await bcrypt.hash(password, 12);
+  const account = await prisma.owner.upsert({
+    where: { email },
+    update: { passwordHash, role },
+    create: { email, passwordHash, role },
+  });
+  return account;
+}
 
-  if (!email || !password) {
+async function main() {
+  const owner = await upsertAccount("owner", process.env.OWNER_EMAIL, process.env.OWNER_PASSWORD);
+  if (!owner) {
     throw new Error("OWNER_EMAIL and OWNER_PASSWORD must be set in .env before seeding.");
   }
+  console.log(`Owner account ready: ${owner.email} (role: ${owner.role})`);
 
-  const passwordHash = await bcrypt.hash(password, 12);
-
-  const owner = await prisma.owner.upsert({
-    where: { email },
-    update: { passwordHash },
-    create: { email, passwordHash },
-  });
-
-  console.log(`Owner account ready: ${owner.email}`);
+  const admin = await upsertAccount("admin", process.env.ADMIN_EMAIL, process.env.ADMIN_PASSWORD);
+  if (admin) {
+    console.log(`Admin account ready: ${admin.email} (role: ${admin.role})`);
+  } else {
+    console.log("ADMIN_EMAIL/ADMIN_PASSWORD not set — skipped creating the admin account.");
+  }
 }
 
 main()

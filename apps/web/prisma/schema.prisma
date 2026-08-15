@@ -16,6 +16,10 @@ model Owner {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
+  // "owner" = مدیر مزرعه (daily/range dashboard); "admin" = ادمین مدیریت
+  // (everything the owner has, plus worker performance analytics and the
+  // AI database-Q&A tool).
+  role         String   @default("owner")
   createdAt    DateTime @default(now())
 }
 
@@ -68,7 +72,7 @@ model Irrigation {
   uid       String   @unique
   date      String   @unique
   worker    String?
-  state     Int[]
+  gardens   Int[] // garden numbers (1..43) under irrigation this day
   count     Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

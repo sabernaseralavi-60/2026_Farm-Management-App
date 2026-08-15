@@ -1,13 +1,7 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-async function requireOwner() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE)?.value;
-  return token ? verifySessionToken(token) : null;
-}
+import { IRRIGATION_GARDEN_TOTAL } from "@/lib/reference-data";
+import { getOwnerSession } from "@/lib/session";
 
 function moneyFromAccounting(rows: { type: string; amount: number }[]) {
   let income = 0;
@@ -20,7 +14,7 @@ function moneyFromAccounting(rows: { type: string; amount: number }[]) {
 }
 
 export async function GET(request: Request) {
-  const session = await requireOwner();
+  const session = await getOwnerSession();
   if (!session) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
@@ -56,7 +50,7 @@ export async function GET(request: Request) {
         workersPresent,
         workersOnLeave,
         machineHours: Math.round(machineHours * 10) / 10,
-        irrigationCoverage: irrigation ? Math.round((irrigation.count / 200) * 100) : null,
+        irrigationCoverage: irrigation ? Math.round((irrigation.count / IRRIGATION_GARDEN_TOTAL) * 100) : null,
         income,
         expense,
         harvestedKg,
@@ -98,7 +92,7 @@ export async function GET(request: Request) {
   const harvestedKg = harvest.reduce((a, r) => a + (r.harvested ?? 0), 0);
   const distinctWorkers = new Set(attendance.filter((r) => r.status === "present").map((r) => r.worker)).size;
   const avgIrrigationCoverage = irrigation.length
-    ? Math.round((irrigation.reduce((a, r) => a + r.count, 0) / irrigation.length / 200) * 100)
+    ? Math.round((irrigation.reduce((a, r) => a + r.count, 0) / irrigation.length / IRRIGATION_GARDEN_TOTAL) * 100)
     : null;
 
   const moneyByDate = new Map<string, { date: string; income: number; expense: number }>();
@@ -110,7 +104,7 @@ export async function GET(request: Request) {
   }
   const moneySeries = [...moneyByDate.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
 
-  const irrigationSeries = irrigation.map((r) => ({ date: r.date, coverage: Math.round((r.count / 200) * 100) }));
+  const irrigationSeries = irrigation.map((r) => ({ date: r.date, coverage: Math.round((r.count / IRRIGATION_GARDEN_TOTAL) * 100) }));
 
   const attendanceByDate = new Map<string, Set<string>>();
   for (const r of attendance) {

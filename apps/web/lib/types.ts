@@ -53,7 +53,8 @@ export interface MachineryRecord extends Synced {
 export interface IrrigationRecord extends Synced {
   date: string;
   worker: string;
-  state: number[];
+  /** Garden numbers (1..IRRIGATION_GARDEN_TOTAL) currently under irrigation this day. */
+  gardens: number[];
   count: number;
 }
 
