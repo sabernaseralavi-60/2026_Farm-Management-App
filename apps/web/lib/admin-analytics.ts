@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { describe, minutesToHHMM, parseTimeToMinutes, welchTTest, type DescriptiveStats, type WelchTTestResult } from "./stats";
 
 /** Per-worker attendance + quality + bonus rollup over a date range — the
  * data behind the admin "تحلیل عملکرد کارگران" page and fed to the AI
@@ -75,6 +76,138 @@ export async function computeWorkerPerformance(from: string, to: string): Promis
   return list;
 }
 
+/** Full per-day attendance record for one worker on one date, as stored — the
+ * raw fields the AI Q&A tool needs to answer "what dates was X absent" or
+ * "show me a sample record" questions, which no aggregate can answer. */
+export interface AttendanceDayRecord {
+  date: string;
+  status: string;
+  leaveType: string | null;
+  morningIn: string | null;
+  morningOut: string | null;
+  morningOk: boolean | null;
+  eveningIn: string | null;
+  eveningOut: string | null;
+  eveningOk: boolean | null;
+}
+
+export interface WorkerAttendanceDetail {
+  worker: string;
+  leaveDates: { date: string; type: "paid" | "unpaid" }[];
+  records: AttendanceDayRecord[];
+}
+
+export interface ShiftTimeStats extends DescriptiveStats {
+  meanHHMM: string;
+  medianHHMM: string;
+  minHHMM: string;
+  maxHHMM: string;
+}
+
+export interface WorkerShiftTiming {
+  worker: string;
+  morningIn: ShiftTimeStats | null;
+  eveningIn: ShiftTimeStats | null;
+}
+
+export interface PairwiseTimingComparison {
+  workerA: string;
+  workerB: string;
+  shift: "morningIn" | "eveningIn";
+  result: WelchTTestResult;
+}
+
+export interface AttendanceAnalytics {
+  /** true once the range holds more raw rows than we're willing to ship to
+   * the LLM — when true, `attendanceDetail.byWorker[].records` is omitted
+   * (leaveDates and shiftTiming stats stay complete either way, since those
+   * are cheap regardless of range size). */
+  recordsTruncated: boolean;
+  attendanceDetail: WorkerAttendanceDetail[];
+  shiftTiming: { byWorker: WorkerShiftTiming[]; pairwiseComparisons: PairwiseTimingComparison[] };
+}
+
+const RAW_RECORDS_CAP = 600;
+const SHIFT_KEYS = [
+  ["morningIn", "morningMins"],
+  ["eveningIn", "eveningMins"],
+] as const;
+
+function toShiftStats(mins: number[]): ShiftTimeStats | null {
+  const d = describe(mins);
+  if (!d) return null;
+  return { ...d, meanHHMM: minutesToHHMM(d.mean), medianHHMM: minutesToHHMM(d.median), minHHMM: minutesToHHMM(d.min), maxHHMM: minutesToHHMM(d.max) };
+}
+
+/** Per-day attendance detail (absence dates, raw records) plus descriptive and
+ * inferential (Welch's t-test) statistics on shift check-in times, per worker
+ * and pairwise between every two workers with enough data. Feeds the AI Q&A
+ * tool so it can answer date-level and statistical-comparison questions
+ * instead of only "% present"-style rollups. */
+export async function computeAttendanceAnalytics(from: string, to: string): Promise<AttendanceAnalytics> {
+  const rows = await prisma.attendance.findMany({ where: { date: { gte: from, lte: to } }, orderBy: { date: "asc" } });
+  const recordsTruncated = rows.length > RAW_RECORDS_CAP;
+
+  const byWorker = new Map<
+    string,
+    { leaveDates: { date: string; type: "paid" | "unpaid" }[]; records: AttendanceDayRecord[]; morningMins: number[]; eveningMins: number[] }
+  >();
+  function bucket(worker: string) {
+    let e = byWorker.get(worker);
+    if (!e) {
+      e = { leaveDates: [], records: [], morningMins: [], eveningMins: [] };
+      byWorker.set(worker, e);
+    }
+    return e;
+  }
+
+  for (const r of rows) {
+    const e = bucket(r.worker);
+    if (r.status === "leave") e.leaveDates.push({ date: r.date, type: r.leaveType === "paid" ? "paid" : "unpaid" });
+    e.records.push({
+      date: r.date,
+      status: r.status,
+      leaveType: r.leaveType,
+      morningIn: r.morningIn,
+      morningOut: r.morningOut,
+      morningOk: r.morningOk,
+      eveningIn: r.eveningIn,
+      eveningOut: r.eveningOut,
+      eveningOk: r.eveningOk,
+    });
+    const mIn = parseTimeToMinutes(r.morningIn);
+    if (mIn !== null) e.morningMins.push(mIn);
+    const eIn = parseTimeToMinutes(r.eveningIn);
+    if (eIn !== null) e.eveningMins.push(eIn);
+  }
+
+  const workers = [...byWorker.keys()].sort((a, b) => a.localeCompare(b));
+
+  const attendanceDetail: WorkerAttendanceDetail[] = workers.map((worker) => {
+    const e = byWorker.get(worker)!;
+    return { worker, leaveDates: e.leaveDates, records: recordsTruncated ? [] : e.records };
+  });
+
+  const shiftByWorker: WorkerShiftTiming[] = workers.map((worker) => {
+    const e = byWorker.get(worker)!;
+    return { worker, morningIn: toShiftStats(e.morningMins), eveningIn: toShiftStats(e.eveningMins) };
+  });
+
+  const pairwiseComparisons: PairwiseTimingComparison[] = [];
+  for (let i = 0; i < workers.length; i++) {
+    for (let j = i + 1; j < workers.length; j++) {
+      const a = byWorker.get(workers[i])!;
+      const b = byWorker.get(workers[j])!;
+      for (const [shift, key] of SHIFT_KEYS) {
+        const result = welchTTest(a[key], b[key]);
+        if (result) pairwiseComparisons.push({ workerA: workers[i], workerB: workers[j], shift, result });
+      }
+    }
+  }
+
+  return { recordsTruncated, attendanceDetail, shiftTiming: { byWorker: shiftByWorker, pairwiseComparisons } };
+}
+
 function topGroups<T>(rows: T[], keyFn: (r: T) => string, valFn: (r: T) => number, limit = 12) {
   const m = new Map<string, number>();
   for (const r of rows) {
@@ -93,6 +226,9 @@ function topGroups<T>(rows: T[], keyFn: (r: T) => string, valFn: (r: T) => numbe
 export interface AdminSnapshot {
   range: { from: string; to: string };
   workerPerformance: WorkerPerformance[];
+  /** Per-day attendance detail + shift-timing statistics — see
+   * computeAttendanceAnalytics for what each field means. */
+  attendance: AttendanceAnalytics;
   money: { income: number; expense: number; byCategory: { key: string; value: number }[] };
   irrigation: { daysLogged: number; avgGardensPerDay: number; maxGardensInADay: number; totalGardenTouches: number };
   orchard: { total: number; byStatus: { key: string; value: number }[]; byTask: { key: string; value: number }[] };
@@ -106,9 +242,10 @@ export interface AdminSnapshot {
 
 export async function buildAdminSnapshot(from: string, to: string): Promise<AdminSnapshot> {
   const range = { gte: from, lte: to };
-  const [workerPerformance, accounting, irrigation, orchard, spray, inventory, harvest, sheep, security, machinery] =
+  const [workerPerformance, attendance, accounting, irrigation, orchard, spray, inventory, harvest, sheep, security, machinery] =
     await Promise.all([
       computeWorkerPerformance(from, to),
+      computeAttendanceAnalytics(from, to),
       prisma.accounting.findMany({ where: { date: range } }),
       prisma.irrigation.findMany({ where: { date: range } }),
       prisma.orchard.findMany({ where: { date: range } }),
@@ -128,6 +265,7 @@ export async function buildAdminSnapshot(from: string, to: string): Promise<Admi
   return {
     range: { from, to },
     workerPerformance,
+    attendance,
     money: {
       income,
       expense,
