@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { IRRIGATION_GARDEN_TOTAL } from "@/lib/reference-data";
 import { getOwnerSession } from "@/lib/session";
 
+// Irrigation records from before the switch to the 43-garden map were
+// counted against the old 200-"abriz" scale; dividing those legacy counts
+// by the new total can exceed 100%, so clamp for display sanity.
+const coveragePct = (count: number) => Math.min(100, Math.round((count / IRRIGATION_GARDEN_TOTAL) * 100));
+
 function moneyFromAccounting(rows: { type: string; amount: number }[]) {
   let income = 0;
   let expense = 0;
@@ -50,7 +55,7 @@ export async function GET(request: Request) {
         workersPresent,
         workersOnLeave,
         machineHours: Math.round(machineHours * 10) / 10,
-        irrigationCoverage: irrigation ? Math.round((irrigation.count / IRRIGATION_GARDEN_TOTAL) * 100) : null,
+        irrigationCoverage: irrigation ? coveragePct(irrigation.count) : null,
         income,
         expense,
         harvestedKg,
@@ -92,7 +97,7 @@ export async function GET(request: Request) {
   const harvestedKg = harvest.reduce((a, r) => a + (r.harvested ?? 0), 0);
   const distinctWorkers = new Set(attendance.filter((r) => r.status === "present").map((r) => r.worker)).size;
   const avgIrrigationCoverage = irrigation.length
-    ? Math.round((irrigation.reduce((a, r) => a + r.count, 0) / irrigation.length / IRRIGATION_GARDEN_TOTAL) * 100)
+    ? Math.min(100, Math.round((irrigation.reduce((a, r) => a + r.count, 0) / irrigation.length / IRRIGATION_GARDEN_TOTAL) * 100))
     : null;
 
   const moneyByDate = new Map<string, { date: string; income: number; expense: number }>();
@@ -104,7 +109,7 @@ export async function GET(request: Request) {
   }
   const moneySeries = [...moneyByDate.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
 
-  const irrigationSeries = irrigation.map((r) => ({ date: r.date, coverage: Math.round((r.count / IRRIGATION_GARDEN_TOTAL) * 100) }));
+  const irrigationSeries = irrigation.map((r) => ({ date: r.date, coverage: coveragePct(r.count) }));
 
   const attendanceByDate = new Map<string, Set<string>>();
   for (const r of attendance) {

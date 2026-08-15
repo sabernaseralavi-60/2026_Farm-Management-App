@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
-import { requireAdminSession } from "@/lib/session";
+import { getOwnerSession } from "@/lib/session";
 import { TeamClient } from "./team-client";
 
+// Available to both the owner and the admin role — this is read-only
+// attendance analytics, not a sensitive admin-only capability.
 export default async function TeamPage() {
-  const session = await requireAdminSession();
-  if (!session) redirect("/owner");
+  const session = await getOwnerSession();
+  if (!session) redirect("/owner/login");
   return <TeamClient />;
 }

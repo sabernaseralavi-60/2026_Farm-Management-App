@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { computeWorkerPerformance } from "@/lib/admin-analytics";
-import { requireAdminSession } from "@/lib/session";
+import { getOwnerSession } from "@/lib/session";
 
 export async function GET(request: Request) {
-  const session = await requireAdminSession();
-  if (!session) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  const session = await getOwnerSession();
+  if (!session) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
   const from = searchParams.get("from");

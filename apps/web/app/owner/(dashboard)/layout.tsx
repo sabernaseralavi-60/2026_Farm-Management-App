@@ -5,7 +5,7 @@ import { LogoutButton } from "./logout-button";
 
 const NAV = [
   { href: "/owner", label: "📊 داشبورد", adminOnly: false },
-  { href: "/owner/team", label: "👷 عملکرد کارگران", adminOnly: true },
+  { href: "/owner/team", label: "👷 عملکرد کارگران", adminOnly: false },
   { href: "/owner/ask", label: "🤖 پرسش هوشمند", adminOnly: true },
 ];
 
