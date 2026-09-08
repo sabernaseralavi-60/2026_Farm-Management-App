@@ -3,8 +3,20 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { createSessionToken, SESSION_COOKIE, SESSION_COOKIE_OPTIONS } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
+
+const LOGIN_RATE_LIMIT = 8;
+const LOGIN_RATE_WINDOW_SECONDS = 10 * 60;
 
 export async function POST(request: Request) {
+  const rl = rateLimit(`owner-login:${clientIp(request)}`, LOGIN_RATE_LIMIT, LOGIN_RATE_WINDOW_SECONDS);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "تلاش‌های زیاد — کمی بعد دوباره امتحان کنید." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+    );
+  }
+
   let body: { email?: string; password?: string };
   try {
     body = await request.json();
