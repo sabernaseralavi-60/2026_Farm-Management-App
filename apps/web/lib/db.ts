@@ -18,6 +18,17 @@ import type {
 // the device. Nothing here is ever deleted because a server sync failed or
 // hasn't happened yet — that is the "Zero Data Loss" guarantee. A record is
 // only ever removed when the user explicitly deletes it (dbDelete below).
+/** A delete that happened locally but hasn't been confirmed removed on the
+ * server yet — queued the same way an unsynced create/update is, so a
+ * delete made while offline still reaches the server once connectivity
+ * returns (see lib/sync.ts). Keyed by `${module}:${uid}` so retrying an
+ * already-flushed delete is a harmless no-op. */
+export interface PendingDelete {
+  id: string;
+  module: ModuleKey;
+  uid: string;
+}
+
 export class FarmDatabase extends Dexie {
   attendance!: Table<AttendanceRecord, string>;
   machinery!: Table<MachineryRecord, string>;
@@ -29,6 +40,7 @@ export class FarmDatabase extends Dexie {
   harvest!: Table<HarvestRecord, string>;
   sheep!: Table<SheepRecord, string>;
   security!: Table<SecurityRecord, string>;
+  pendingDeletes!: Table<PendingDelete, string>;
 
   constructor() {
     super("FarmDatabaseV2");
@@ -47,6 +59,12 @@ export class FarmDatabase extends Dexie {
       harvest: "uid, date, product",
       sheep: "uid, date, category",
       security: "uid, date, type",
+    });
+    // v2: track deletes that still need to reach the server (see
+    // PendingDelete above) — a plain `db[module].delete(uid)` never told
+    // the backend, so a "deleted" record lived forever in Postgres.
+    this.version(2).stores({
+      pendingDeletes: "id, module",
     });
   }
 }

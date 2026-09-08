@@ -2,7 +2,7 @@
 
 import { create, type StoreApi, type UseBoundStore } from "zustand";
 import { MODULE_KEYS, tableFor } from "./db";
-import { queueSync } from "./sync";
+import { queueDelete, queueSync } from "./sync";
 import { onRecordSynced } from "./sync-bus";
 import type { AnyRecord, ModuleKey, Synced } from "./types";
 
@@ -59,6 +59,10 @@ export function useModuleStore<T extends Synced>(module: ModuleKey): ModuleStore
       remove: async (uid: string) => {
         await table.delete(uid);
         set({ rows: get().rows.filter((r) => r.uid !== uid) });
+        // The local row is gone immediately (same snappy UX as before) —
+        // this just makes sure Postgres eventually finds out too, instead
+        // of the deleted record living there forever (see lib/sync.ts).
+        queueDelete(module, uid);
       },
     }));
     cache.set(module, hook);

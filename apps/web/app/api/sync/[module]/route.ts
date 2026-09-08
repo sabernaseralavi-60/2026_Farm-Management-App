@@ -82,3 +82,55 @@ export async function POST(request: Request, ctx: RouteContext<"/api/sync/[modul
     return NextResponse.json({ ok: false, error: "server error" }, { status: 500 });
   }
 }
+
+// DELETE /api/sync/[module] — idempotent delete keyed on `uid` (body:
+// { uid: string }). Safe to call repeatedly: a uid that's already gone (or
+// never existed) still returns ok:true, since offline retries can't tell
+// whether their previous attempt actually landed.
+export async function DELETE(request: Request, ctx: RouteContext<"/api/sync/[module]">) {
+  const cookieStore = await cookies();
+  const gateOk = await verifyGateToken(cookieStore.get(GATE_COOKIE)?.value);
+  if (!gateOk) {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+
+  const { module } = await ctx.params;
+  if (!isModuleKey(module)) {
+    return NextResponse.json({ ok: false, error: "unknown module" }, { status: 404 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ ok: false, error: "invalid json" }, { status: 400 });
+  }
+
+  const uid = (body as { uid?: unknown })?.uid;
+  if (typeof uid !== "string" || !uid) {
+    return NextResponse.json({ ok: false, error: "uid is required" }, { status: 400 });
+  }
+
+  const delegateKey = DELEGATE[module];
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const delegate = (prisma as any)[delegateKey];
+    const existing = await delegate.findUnique({ where: { uid } });
+    if (!existing) {
+      // Already gone (or never synced) — deletion is still the correct
+      // end state, so this is success, not a 404.
+      return NextResponse.json({ ok: true, uid });
+    }
+    if (!isDateEditable(existing.date)) {
+      return NextResponse.json(
+        { ok: false, error: "این تاریخ قفل شده و دیگر قابل حذف نیست." },
+        { status: 403 },
+      );
+    }
+    await delegate.delete({ where: { uid } });
+    return NextResponse.json({ ok: true, uid });
+  } catch (err) {
+    console.error(`sync delete failed for ${module}`, err);
+    return NextResponse.json({ ok: false, error: "server error" }, { status: 500 });
+  }
+}
