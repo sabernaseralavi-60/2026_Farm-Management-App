@@ -43,3 +43,6 @@ Thumbs.db
 
 # turbo
 .turbo
+
+# gstack local artifacts (security reports, qa reports — stay local)
+.gstack/
