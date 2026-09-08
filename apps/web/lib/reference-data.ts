@@ -19,8 +19,6 @@ export const MACHINERY_CATEGORIES = [
   "🚜 کار در مزرعه",
 ];
 
-export const GARDENS = Array.from({ length: 20 }, (_, i) => "باغ " + toFa(i + 1));
-
 export const SPRAY_OPS = [
   "سم‌پاشی آفات",
   "قارچ‌کشی",
@@ -219,6 +217,11 @@ export const IRRIGATION_ZONES: IrrigationZone[] = [
 ];
 
 export const IRRIGATION_GARDEN_TOTAL = IRRIGATION_ZONES.reduce((a, z) => a + z.gardens.length, 0);
+
+// Orchard/spray garden picker — was hardcoded to 20 (bug: gardens 21-43 had no
+// way to be logged for orchard tasks or spray/fertilizer ops). Derived from
+// the irrigation map's real garden count so it can never drift again.
+export const GARDENS = Array.from({ length: IRRIGATION_GARDEN_TOTAL }, (_, i) => "باغ " + toFa(i + 1));
 
 export function irrigationZoneOfGarden(n: number): 1 | 2 | 3 | 4 | undefined {
   return IRRIGATION_ZONES.find((z) => z.gardens.some((g) => g.n === n))?.zone;
