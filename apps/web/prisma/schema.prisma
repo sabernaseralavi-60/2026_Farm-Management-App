@@ -16,9 +16,9 @@ model Owner {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
-  // "owner" = مدیر مزرعه (daily/range dashboard); "admin" = ادمین مدیریت
-  // (everything the owner has, plus worker performance analytics and the
-  // AI database-Q&A tool).
+  // "owner" and "admin" currently get identical access (worker performance
+  // analytics and the AI Q&A tool were opened to both roles) — kept for
+  // future use, nothing in the app branches on this value right now.
   role         String   @default("owner")
   createdAt    DateTime @default(now())
 }
