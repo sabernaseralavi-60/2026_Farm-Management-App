@@ -1,6 +1,12 @@
 import { z } from "zod";
 import type { ModuleKey } from "./types";
 
+// Jalali "YYYY/MM/DD" — was a bare z.string().min(1) before, so a malformed
+// value fell through to isDateEditable() and was rejected there (fail
+// closed, not exploitable), but the shape wasn't actually checked at the
+// boundary. Reject it here instead, before it ever reaches date logic.
+const dateField = z.string().regex(/^\d{4}\/\d{2}\/\d{2}$/, "invalid date format, expected YYYY/MM/DD");
+
 const shiftSchema = z
   .object({
     in: z.string(),
@@ -14,7 +20,7 @@ const shiftSchema = z
 
 const attendanceSchema = z.object({
   uid: z.string().min(1),
-  date: z.string().min(1),
+  date: dateField,
   worker: z.string().min(1),
   status: z.enum(["present", "leave"]),
   leaveType: z.enum(["paid", "unpaid"]).optional(),
@@ -24,7 +30,7 @@ const attendanceSchema = z.object({
 
 const machinerySchema = z.object({
   uid: z.string().min(1),
-  date: z.string().min(1),
+  date: dateField,
   machine: z.string().min(1),
   driver: z.string().optional().default(""),
   start: z.union([z.number(), z.literal("")]),
@@ -37,7 +43,7 @@ const machinerySchema = z.object({
 
 const irrigationSchema = z.object({
   uid: z.string().min(1),
-  date: z.string().min(1),
+  date: dateField,
   worker: z.string().optional().default(""),
   gardens: z.array(z.number()),
   count: z.number(),
@@ -45,7 +51,7 @@ const irrigationSchema = z.object({
 
 const pestFertilizerSchema = z.object({
   uid: z.string().min(1),
-  date: z.string().min(1),
+  date: dateField,
   garden: z.string(),
   op: z.string(),
   material: z.string().optional().default(""),
@@ -57,7 +63,7 @@ const pestFertilizerSchema = z.object({
 
 const orchardSchema = z.object({
   uid: z.string().min(1),
-  date: z.string().min(1),
+  date: dateField,
   garden: z.string(),
   task: z.string(),
   worker: z.string().optional().default(""),
@@ -68,7 +74,7 @@ const orchardSchema = z.object({
 
 const inventorySchema = z.object({
   uid: z.string().min(1),
-  date: z.string().min(1),
+  date: dateField,
   item: z.string().min(1),
   type: z.enum(["ورود", "خروج"]),
   qty: z.union([z.number(), z.literal("")]),
@@ -79,7 +85,7 @@ const inventorySchema = z.object({
 
 const accountingSchema = z.object({
   uid: z.string().min(1),
-  date: z.string().min(1),
+  date: dateField,
   type: z.enum(["درآمد", "هزینه"]),
   category: z.string(),
   amount: z.union([z.number(), z.literal("")]),
@@ -89,7 +95,7 @@ const accountingSchema = z.object({
 
 const harvestSchema = z.object({
   uid: z.string().min(1),
-  date: z.string().min(1),
+  date: dateField,
   product: z.string(),
   harvested: z.union([z.number(), z.literal("")]),
   sold: z.union([z.number(), z.literal("")]),
@@ -100,7 +106,7 @@ const harvestSchema = z.object({
 
 const sheepSchema = z.object({
   uid: z.string().min(1),
-  date: z.string().min(1),
+  date: dateField,
   category: z.string(),
   count: z.union([z.number(), z.literal("")]),
   amount: z.union([z.number(), z.literal("")]),
@@ -110,7 +116,7 @@ const sheepSchema = z.object({
 
 const securitySchema = z.object({
   uid: z.string().min(1),
-  date: z.string().min(1),
+  date: dateField,
   type: z.string(),
   title: z.string(),
   desc: z.string().optional().default(""),
