@@ -16,8 +16,8 @@ export default async function WorkerLayout({ children }: { children: React.React
   return (
     <>
       <SiteHeader />
-      <TopNav access={session.access} />
-      <MobileNav access={session.access} />
+      <TopNav access={session.access} user={session.user} />
+      <MobileNav access={session.access} user={session.user} />
       <WorkersDatalist />
       <main className="mx-auto max-w-6xl p-4 sm:p-6">
         <ModuleGuard access={session.access}>{children}</ModuleGuard>

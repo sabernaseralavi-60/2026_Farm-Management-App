@@ -5,9 +5,10 @@ import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { useState } from "react";
 import { canAccessModule, type GateAccess } from "@/lib/access";
+import { GateLogoutButton } from "./gate-logout-button";
 import { MODULE_META, findModuleMeta } from "@/lib/module-meta";
 
-export function MobileNav({ access }: { access: GateAccess }) {
+export function MobileNav({ access, user }: { access: GateAccess; user?: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [lastPathname, setLastPathname] = useState(pathname);
@@ -35,7 +36,7 @@ export function MobileNav({ access }: { access: GateAccess }) {
         <span className="flex items-center gap-2 font-extrabold text-bark-700">
           <span aria-hidden>{current?.icon}</span> {current?.navLabel}
         </span>
-        <span className="w-11" />
+        <GateLogoutButton user={user} className="px-2" />
       </div>
 
       {open && (

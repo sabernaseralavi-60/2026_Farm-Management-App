@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { canAccessModule, type GateAccess } from "@/lib/access";
+import { GateLogoutButton } from "./gate-logout-button";
 import { MODULE_META } from "@/lib/module-meta";
 
-export function TopNav({ access }: { access: GateAccess }) {
+export function TopNav({ access, user }: { access: GateAccess; user?: string }) {
   const pathname = usePathname();
   return (
     <nav className="glass sticky top-0 z-40 hidden border-b border-white/40 md:block">
@@ -28,6 +29,7 @@ export function TopNav({ access }: { access: GateAccess }) {
             </Link>
           );
         })}
+        <GateLogoutButton user={user} className="my-1.5 mr-2" />
       </div>
     </nav>
   );
