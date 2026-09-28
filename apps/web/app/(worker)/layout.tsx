@@ -5,20 +5,23 @@ import { SiteFooter } from "@/components/shell/site-footer";
 import { SiteHeader } from "@/components/shell/site-header";
 import { TopNav } from "@/components/shell/top-nav";
 import { WorkersDatalist } from "@/components/shell/workers-datalist";
-import { GATE_COOKIE, verifyGateToken } from "@/lib/gate";
+import { ModuleGuard } from "@/components/shell/module-guard";
+import { GATE_COOKIE, getGateSession } from "@/lib/gate";
 
 export default async function WorkerLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
-  const ok = await verifyGateToken(cookieStore.get(GATE_COOKIE)?.value);
-  if (!ok) redirect("/gate");
+  const session = await getGateSession(cookieStore.get(GATE_COOKIE)?.value);
+  if (!session) redirect("/gate");
 
   return (
     <>
       <SiteHeader />
-      <TopNav />
-      <MobileNav />
+      <TopNav access={session.access} />
+      <MobileNav access={session.access} />
       <WorkersDatalist />
-      <main className="mx-auto max-w-6xl p-4 sm:p-6">{children}</main>
+      <main className="mx-auto max-w-6xl p-4 sm:p-6">
+        <ModuleGuard access={session.access}>{children}</ModuleGuard>
+      </main>
       <SiteFooter />
     </>
   );

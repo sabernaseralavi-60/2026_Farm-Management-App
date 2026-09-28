@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { isDateEditable } from "@/lib/date-policy";
-import { GATE_COOKIE, verifyGateToken } from "@/lib/gate";
+import { canSyncModule } from "@/lib/access";
+import { GATE_COOKIE, getGateSession } from "@/lib/gate";
 import { prisma } from "@/lib/prisma";
 import { SYNC_SCHEMAS, toPrismaData } from "@/lib/sync-schemas";
 import type { ModuleKey } from "@/lib/types";
@@ -29,8 +30,8 @@ function isModuleKey(v: string): v is ModuleKey {
 // the same row instead of creating a new one.
 export async function POST(request: Request, ctx: RouteContext<"/api/sync/[module]">) {
   const cookieStore = await cookies();
-  const gateOk = await verifyGateToken(cookieStore.get(GATE_COOKIE)?.value);
-  if (!gateOk) {
+  const gate = await getGateSession(cookieStore.get(GATE_COOKIE)?.value);
+  if (!gate) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
@@ -38,6 +39,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/sync/[modul
 
   if (!isModuleKey(module)) {
     return NextResponse.json({ ok: false, error: "unknown module" }, { status: 404 });
+  }
+  if (!canSyncModule(gate.access, module)) {
+    return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   }
 
   let body: unknown;
@@ -89,14 +93,17 @@ export async function POST(request: Request, ctx: RouteContext<"/api/sync/[modul
 // whether their previous attempt actually landed.
 export async function DELETE(request: Request, ctx: RouteContext<"/api/sync/[module]">) {
   const cookieStore = await cookies();
-  const gateOk = await verifyGateToken(cookieStore.get(GATE_COOKIE)?.value);
-  if (!gateOk) {
+  const gate = await getGateSession(cookieStore.get(GATE_COOKIE)?.value);
+  if (!gate) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
   const { module } = await ctx.params;
   if (!isModuleKey(module)) {
     return NextResponse.json({ ok: false, error: "unknown module" }, { status: 404 });
+  }
+  if (!canSyncModule(gate.access, module)) {
+    return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   }
 
   let body: unknown;

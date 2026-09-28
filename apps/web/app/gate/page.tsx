@@ -9,7 +9,8 @@ import { GlassCard } from "@/components/ui/glass-card";
 function GateForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/attendance";
+  const next = searchParams.get("next");
+  const [username, setUsername] = useState("");
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,13 +23,16 @@ function GateForm() {
       const res = await fetch("/api/gate/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin }),
+        body: JSON.stringify(username.trim() ? { username, password: pin } : { pin }),
       });
       if (!res.ok) {
-        setError("رمز اشتباه است. با سرکارگر یا مدیر مزرعه چک کنید.");
+        setError("نام کاربری یا رمز اشتباه است. با مدیر مزرعه چک کنید.");
         return;
       }
-      router.push(next);
+      const { home } = (await res.json()) as { home: string };
+      // `next` is only honoured for same-site paths; the server-chosen home
+      // is where a limited user (e.g. tractor manager) actually has access.
+      router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : home);
       router.refresh();
     } finally {
       setLoading(false);
@@ -44,12 +48,23 @@ function GateForm() {
         <div className="mb-6 text-center">
           <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-leaf-600/15 text-3xl">🔒</div>
           <h1 className="text-fluid-lg font-extrabold text-bark-800">سامانه مدیریت مزرعه</h1>
-          <p className="mt-1 text-fluid-sm text-bark-500">رمز مزرعه را وارد کنید</p>
+          <p className="mt-1 text-fluid-sm text-bark-500">وارد شوید</p>
         </div>
         <form onSubmit={onSubmit} className="space-y-4">
-          <FieldWrap label="رمز مزرعه">
+          <FieldWrap label="نام کاربری (مخصوص مدیران بخش‌ها)">
             <TextInput
               autoFocus
+              dir="ltr"
+              autoCapitalize="none"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="خالی بگذارید اگر رمز مزرعه دارید"
+              className="text-center"
+            />
+          </FieldWrap>
+          <FieldWrap label={username.trim() ? "رمز عبور" : "رمز مزرعه"}>
+            <TextInput
               required
               dir="ltr"
               inputMode="text"

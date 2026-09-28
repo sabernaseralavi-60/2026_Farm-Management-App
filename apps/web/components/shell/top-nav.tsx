@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
+import { canAccessModule, type GateAccess } from "@/lib/access";
 import { MODULE_META } from "@/lib/module-meta";
 
-export function TopNav() {
+export function TopNav({ access }: { access: GateAccess }) {
   const pathname = usePathname();
   return (
     <nav className="glass sticky top-0 z-40 hidden border-b border-white/40 md:block">
       <div className="mx-auto flex max-w-6xl flex-wrap justify-center">
-        {MODULE_META.map((m) => {
+        {MODULE_META.filter((m) => canAccessModule(access, m.key)).map((m) => {
           const active = pathname === m.href;
           return (
             <Link

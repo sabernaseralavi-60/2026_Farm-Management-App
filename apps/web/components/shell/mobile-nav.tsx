@@ -4,13 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { useState } from "react";
+import { canAccessModule, type GateAccess } from "@/lib/access";
 import { MODULE_META, findModuleMeta } from "@/lib/module-meta";
 
-export function MobileNav() {
+export function MobileNav({ access }: { access: GateAccess }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [lastPathname, setLastPathname] = useState(pathname);
-  const current = MODULE_META.find((m) => m.href === pathname) ?? findModuleMeta("attendance");
+  const allowed = MODULE_META.filter((m) => canAccessModule(access, m.key));
+  const current = allowed.find((m) => m.href === pathname) ?? allowed[0] ?? findModuleMeta("attendance");
 
   // Close the drawer on navigation. Adjusting state during render (rather
   // than in a useEffect) avoids an extra commit/paint after each route change.
@@ -55,7 +57,7 @@ export function MobileNav() {
               </button>
             </div>
             <nav className="flex flex-col gap-1 p-3">
-              {MODULE_META.map((m) => {
+              {allowed.map((m) => {
                 const active = m.href === pathname;
                 return (
                   <Link

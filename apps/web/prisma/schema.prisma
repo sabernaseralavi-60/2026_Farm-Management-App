@@ -23,6 +23,19 @@ model Owner {
   createdAt    DateTime @default(now())
 }
 
+// Per-person login for the worker-facing app, restricted to specific modules
+// (e.g. the tractor manager only sees/records "machinery"). The shared
+// FARM_PIN still exists and grants full access; these accounts are the
+// narrower alternative. `modules` holds ModuleMeta keys (lib/module-meta.ts).
+model FieldUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  displayName  String
+  modules      String[]
+  createdAt    DateTime @default(now())
+}
+
 model Attendance {
   id           String    @id @default(cuid())
   uid          String    @unique

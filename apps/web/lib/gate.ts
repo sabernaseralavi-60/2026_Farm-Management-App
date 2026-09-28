@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+import type { GateAccess } from "./access";
 
 export const GATE_COOKIE = "farm_gate_session";
 const GATE_TTL_SECONDS = 60 * 60 * 24 * 90; // 90 days — this is a shared farm PIN, not a personal login
@@ -9,21 +10,35 @@ function secretKey() {
   return new TextEncoder().encode("gate:" + secret);
 }
 
-export async function createGateToken(): Promise<string> {
-  return new SignJWT({ gate: true })
+export interface GateSession {
+  access: GateAccess;
+  /** FieldUser username; absent for the shared farm PIN. */
+  user?: string;
+}
+
+/** `user` omitted = the shared farm PIN (full access). Otherwise the token
+ * is limited to `modules`. */
+export async function createGateToken(user?: { username: string; modules: string[] }): Promise<string> {
+  const claims = user ? { gate: true, user: user.username, modules: user.modules } : { gate: true };
+  return new SignJWT(claims)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${GATE_TTL_SECONDS}s`)
     .sign(secretKey());
 }
 
-export async function verifyGateToken(token: string | undefined): Promise<boolean> {
-  if (!token) return false;
+export async function getGateSession(token: string | undefined): Promise<GateSession | null> {
+  if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secretKey());
-    return payload.gate === true;
+    if (payload.gate !== true) return null;
+    // Tokens issued before per-person logins have no `modules` claim — they
+    // came from the shared PIN, so they keep full access.
+    if (!Array.isArray(payload.modules)) return { access: "all" };
+    const modules = payload.modules.filter((m): m is string => typeof m === "string");
+    return { access: modules, user: typeof payload.user === "string" ? payload.user : undefined };
   } catch {
-    return false;
+    return null;
   }
 }
 
