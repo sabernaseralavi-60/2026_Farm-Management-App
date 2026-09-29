@@ -1,10 +1,11 @@
 import { findModuleMeta } from "./module-meta";
+import { toFa } from "./jalaali";
 import type { ModuleKey } from "./types";
 
-/** Notifies Saber on Bale whenever a limited worker-app login (Milad,
- * Mousa, ...) submits data — so he doesn't have to keep opening the site to
- * check whether anything came in. Uses Bale's bot API, which is close to
- * Telegram's: https://tapi.bale.ai/bot<TOKEN>/sendMessage.
+/** Notifies Saber on Bale whenever any worker-app login submits data — so
+ * he doesn't have to keep opening the site to check whether anything came
+ * in. Uses Bale's bot API, which is close to Telegram's:
+ * https://tapi.bale.ai/bot<TOKEN>/sendMessage.
  *
  * Both env vars are optional — with either unset this silently no-ops
  * (logged once), the same pattern as OPENROUTER_API_KEY elsewhere in this
@@ -12,50 +13,115 @@ import type { ModuleKey } from "./types";
 
 const SYNC_KEY_TO_PAGE_KEY: Partial<Record<ModuleKey, string>> = { pest_fertilizer: "spray" };
 
-// Fields worth showing per module, in order — kept short on purpose (a Bale
-// push notification, not a full record dump); see /owner/data for the rest.
-const HIGHLIGHT_FIELDS: Record<ModuleKey, string[]> = {
-  attendance: ["worker", "date", "status"],
-  machinery: ["machine", "date", "category"],
-  irrigation: ["date", "count"],
-  pest_fertilizer: ["garden", "date", "op"],
-  orchard: ["garden", "date", "task"],
-  inventory: ["item", "date", "type", "qty"],
-  accounting: ["date", "type", "category", "amount"],
-  harvest: ["date", "product"],
-  sheep: ["date", "category", "count"],
-  security: ["date", "title"],
+// Every field worth reporting per module, in the same order the form shows
+// them — this is meant to read like the actual record, not a teaser (see
+// /owner/data for browsing after the fact, this is instead of it).
+const FIELDS: Record<ModuleKey, string[]> = {
+  attendance: [], // attendance has its own nested formatter below — see formatAttendance
+  machinery: ["date", "machine", "driver", "start", "end", "usefulHours", "category", "details", "cost"],
+  irrigation: ["date", "worker", "count"], // `gardens` is handled separately (array of numbers)
+  pest_fertilizer: ["date", "garden", "op", "material", "dose", "target", "operator", "note"],
+  orchard: ["date", "garden", "task", "worker", "count", "status", "note"],
+  inventory: ["date", "item", "type", "qty", "unit", "party", "desc"],
+  accounting: ["date", "type", "category", "amount", "party", "desc"],
+  harvest: ["date", "product", "harvested", "sold", "price", "buyer", "note"],
+  sheep: ["date", "category", "count", "amount", "person", "desc"],
+  security: ["date", "type", "title", "desc", "identified", "action", "reporter"],
 };
 
 const FIELD_LABELS: Record<string, string> = {
-  worker: "کارگر",
   date: "تاریخ",
+  worker: "کارگر",
   status: "وضعیت",
+  leaveType: "نوع مرخصی",
   machine: "ماشین",
+  driver: "راننده",
+  start: "ساعت‌کار شروع",
+  end: "ساعت‌کار پایان",
+  usefulHours: "ساعات کارکرد",
   category: "رویداد",
+  details: "جزئیات",
+  cost: "هزینه/مصرف",
   count: "تعداد",
   garden: "باغ",
   op: "عملیات",
+  material: "کود/سم",
+  dose: "دوز",
+  target: "هدف",
+  operator: "اپراتور",
+  note: "توضیحات",
   task: "نوع کار",
   item: "کالا",
   type: "نوع",
   qty: "مقدار",
+  unit: "واحد",
+  party: "طرف",
+  desc: "توضیحات",
   amount: "مبلغ",
   product: "محصول",
+  harvested: "برداشت",
+  sold: "فروش",
+  price: "قیمت واحد",
+  buyer: "خریدار",
+  person: "مسئول",
   title: "عنوان",
+  identified: "شناسایی افراد",
+  action: "اقدام انجام‌شده",
+  reporter: "گزارش‌دهنده",
 };
 
+const faVal = (v: unknown) => toFa(String(v));
+
+function formatShift(label: string, shift: unknown): string | null {
+  if (!shift || typeof shift !== "object") return null;
+  const s = shift as { in?: string; out?: string; workType?: string; quality?: boolean; bonus?: number | ""; desc?: string };
+  const parts = [
+    s.in && s.out ? `${faVal(s.in)} تا ${faVal(s.out)}` : null,
+    s.workType === "lump" ? "مقطوع" : "پایه",
+    `کیفیت: ${s.quality ? "✓" : "—"}`,
+    s.bonus ? `پاداش: ${faVal(s.bonus)}` : null,
+    s.desc ? `(${s.desc})` : null,
+  ].filter(Boolean);
+  return `${label}: ${parts.join("، ")}`;
+}
+
+function formatAttendance(data: Record<string, unknown>): string[] {
+  const lines: string[] = [];
+  lines.push(`کارگر: ${data.worker}`);
+  lines.push(`تاریخ: ${data.date}`);
+  if (data.status === "leave") {
+    lines.push(`وضعیت: مرخصی${data.leaveType ? ` (${data.leaveType === "paid" ? "با حقوق" : "بدون حقوق"})` : ""}`);
+  } else {
+    lines.push("وضعیت: حاضر");
+  }
+  const morning = formatShift("صبح", data.morning);
+  if (morning) lines.push(morning);
+  const evening = formatShift("عصر", data.evening);
+  if (evening) lines.push(evening);
+  return lines;
+}
+
 function summarizeRecord(module: ModuleKey, data: Record<string, unknown>): string {
-  const fields = HIGHLIGHT_FIELDS[module]
+  if (module === "attendance") return formatAttendance(data).join("\n");
+
+  const lines = FIELDS[module]
     .map((f) => {
       const v = data[f];
       if (v === null || v === undefined || v === "") return null;
-      return `${FIELD_LABELS[f] ?? f}: ${v}`;
+      const label = FIELD_LABELS[f] ?? f;
+      const formatted = typeof v === "number" ? faVal(v) : String(v);
+      return `${label}: ${formatted}`;
     })
-    .filter(Boolean);
+    .filter((l): l is string => l !== null);
+
+  if (module === "irrigation" && Array.isArray(data.gardens) && data.gardens.length) {
+    lines.push(`باغ‌های آبیاری‌شده: ${toFa((data.gardens as number[]).slice().sort((a, b) => a - b).join("، "))}`);
+  }
+
   const photos = data.photos;
-  if (Array.isArray(photos) && photos.length) fields.push(`📷 ${photos.length} عکس`);
-  return fields.join(" — ");
+  if (Array.isArray(photos) && photos.length) lines.push(`📷 عکس: ${photos.length}`);
+
+  return lines.join("\n");
 }
 
 let warnedMissingConfig = false;
@@ -82,7 +148,8 @@ async function sendBaleMessage(text: string): Promise<void> {
   }
 }
 
-/** Fire-and-forget — the caller should `void` this so a Bale outage never
+/** Fire-and-forget — the caller should schedule this (see
+ * lib/sync.ts's use of next/server's `after()`) so a Bale outage never
  * slows down or fails the worker's actual data-entry request. */
 export async function notifyDataEntry(opts: {
   action: "ثبت/ویرایش" | "حذف";
