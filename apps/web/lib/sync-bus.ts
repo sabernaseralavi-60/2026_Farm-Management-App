@@ -19,3 +19,24 @@ export function onRecordSynced(cb: (detail: RecordSyncedDetail) => void) {
   syncBus.addEventListener("record-synced", handler);
   return () => syncBus.removeEventListener("record-synced", handler);
 }
+
+/** Same idea, for lib/photo-upload.ts → components/ui/photo-picker.tsx: lets
+ * an open form learn the moment its own queued photo finishes uploading,
+ * without polling. `id` is the PendingPhoto row id, so a picker with
+ * several photos queued for the same record can tell them apart. */
+export interface PhotoUploadedDetail {
+  id: string;
+  module: string;
+  uid: string;
+  url: string;
+}
+
+export function emitPhotoUploaded(detail: PhotoUploadedDetail) {
+  syncBus.dispatchEvent(new CustomEvent<PhotoUploadedDetail>("photo-uploaded", { detail }));
+}
+
+export function onPhotoUploaded(cb: (detail: PhotoUploadedDetail) => void) {
+  const handler = (e: Event) => cb((e as CustomEvent<PhotoUploadedDetail>).detail);
+  syncBus.addEventListener("photo-uploaded", handler);
+  return () => syncBus.removeEventListener("photo-uploaded", handler);
+}

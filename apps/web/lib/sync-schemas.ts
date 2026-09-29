@@ -7,6 +7,11 @@ import type { ModuleKey } from "./types";
 // boundary. Reject it here instead, before it ever reaches date logic.
 const dateField = z.string().regex(/^\d{4}\/\d{2}\/\d{2}$/, "invalid date format, expected YYYY/MM/DD");
 
+// Photos are uploaded separately (POST /api/photos/upload, Vercel Blob) —
+// this only ever carries back the resulting URLs, so a plain URL check is
+// enough; the upload endpoint is what actually validates file content.
+const photosField = z.array(z.string().url()).optional().default([]);
+
 const shiftSchema = z
   .object({
     in: z.string(),
@@ -39,6 +44,7 @@ const machinerySchema = z.object({
   category: z.string(),
   details: z.string().optional().default(""),
   cost: z.string().optional().default(""),
+  photos: photosField,
 });
 
 const irrigationSchema = z.object({
@@ -70,6 +76,7 @@ const orchardSchema = z.object({
   count: z.union([z.number(), z.literal("")]),
   status: z.string(),
   note: z.string().optional().default(""),
+  photos: photosField,
 });
 
 const inventorySchema = z.object({
@@ -102,6 +109,7 @@ const harvestSchema = z.object({
   price: z.union([z.number(), z.literal("")]),
   buyer: z.string().optional().default(""),
   note: z.string().optional().default(""),
+  photos: photosField,
 });
 
 const sheepSchema = z.object({
@@ -123,6 +131,7 @@ const securitySchema = z.object({
   identified: z.string().optional().default(""),
   action: z.string().optional().default(""),
   reporter: z.string().optional().default(""),
+  photos: photosField,
 });
 
 export const SYNC_SCHEMAS = {
@@ -177,6 +186,7 @@ export function toPrismaData(module: ModuleKey, data: Record<string, unknown>) {
         category: d.category,
         details: d.details,
         cost: d.cost,
+        photos: d.photos,
       };
     }
     case "irrigation": {
@@ -206,6 +216,7 @@ export function toPrismaData(module: ModuleKey, data: Record<string, unknown>) {
         count: n(d.count),
         status: d.status,
         note: d.note,
+        photos: d.photos,
       };
     }
     case "inventory": {
@@ -241,6 +252,7 @@ export function toPrismaData(module: ModuleKey, data: Record<string, unknown>) {
         price: n(d.price),
         buyer: d.buyer,
         note: d.note,
+        photos: d.photos,
       };
     }
     case "sheep": {
@@ -264,6 +276,7 @@ export function toPrismaData(module: ModuleKey, data: Record<string, unknown>) {
         identified: d.identified,
         action: d.action,
         reporter: d.reporter,
+        photos: d.photos,
       };
     }
   }

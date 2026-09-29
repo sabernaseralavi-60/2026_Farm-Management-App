@@ -7,6 +7,7 @@ import { FieldWrap, Select, Textarea, TextInput } from "@/components/ui/fields";
 import { GlassCard } from "@/components/ui/glass-card";
 import { JalaliDatePicker } from "@/components/ui/jalali-date-picker";
 import { ModuleHero } from "@/components/ui/module-hero";
+import { PhotoPicker } from "@/components/ui/photo-picker";
 import { EDITABLE_DAYS_BACK, isDateEditable } from "@/lib/date-policy";
 import { toFa, todayJStr } from "@/lib/jalaali";
 import { findModuleMeta } from "@/lib/module-meta";
@@ -19,7 +20,7 @@ const meta = findModuleMeta("security")!;
 
 function emptyForm(): SecurityRecord {
   return {
-    uid: "",
+    uid: genUid(),
     synced: false,
     date: todayJStr(),
     type: SEC_TYPES[0],
@@ -28,6 +29,7 @@ function emptyForm(): SecurityRecord {
     identified: SEC_IDENT[0],
     action: SEC_ACTION[0],
     reporter: "",
+    photos: [],
   };
 }
 
@@ -55,7 +57,7 @@ export default function SecurityPage() {
     if (!form.date) return toast.error("لطفاً تاریخ را وارد کنید.");
     if (!isDateEditable(form.date)) return toast.error(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
     if (!form.title.trim()) return toast.error("عنوان حادثه را وارد کنید.");
-    const record: SecurityRecord = { ...form, uid: editingUid ?? genUid(), synced: false, title: form.title.trim() };
+    const record: SecurityRecord = { ...form, synced: false, title: form.title.trim() };
     if (editingUid) await update(record);
     else await add(record);
     resetForm();
@@ -68,6 +70,7 @@ export default function SecurityPage() {
     { key: "identified", label: "شناسایی", render: (r) => r.identified || "—" },
     { key: "action", label: "اقدام", render: (r) => r.action || "—" },
     { key: "reporter", label: "گزارش‌دهنده", render: (r) => r.reporter || "—" },
+    { key: "photos", label: "عکس", render: (r) => (r.photos?.length ? `📷 ${toFa(r.photos.length)}` : "—") },
   ];
 
   return (
@@ -120,6 +123,14 @@ export default function SecurityPage() {
               <TextInput list="workers-list" value={form.reporter} onChange={(e) => setForm({ ...form, reporter: e.target.value })} placeholder="نام گزارش‌دهنده" />
             </FieldWrap>
           </div>
+          <FieldWrap label="عکس (اختیاری) — مستند حادثه">
+            <PhotoPicker
+              module="security"
+              uid={form.uid}
+              photos={form.photos ?? []}
+              onPhotosChange={(photos) => setForm((f) => ({ ...f, photos }))}
+            />
+          </FieldWrap>
           <div className="flex flex-wrap gap-3 pt-1">
             <Button type="submit" variant="brown" size="lg">
               {editingUid ? "💾 بروزرسانی رکورد" : "➕ ثبت رویداد امنیتی"}

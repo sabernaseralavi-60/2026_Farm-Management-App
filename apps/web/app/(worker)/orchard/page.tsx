@@ -7,6 +7,7 @@ import { FieldWrap, Select, TextInput } from "@/components/ui/fields";
 import { GlassCard } from "@/components/ui/glass-card";
 import { JalaliDatePicker } from "@/components/ui/jalali-date-picker";
 import { ModuleHero } from "@/components/ui/module-hero";
+import { PhotoPicker } from "@/components/ui/photo-picker";
 import { EDITABLE_DAYS_BACK, isDateEditable } from "@/lib/date-policy";
 import { toFa, todayJStr } from "@/lib/jalaali";
 import { findModuleMeta } from "@/lib/module-meta";
@@ -19,7 +20,7 @@ const meta = findModuleMeta("orchard")!;
 
 function emptyForm(): OrchardRecord {
   return {
-    uid: "",
+    uid: genUid(),
     synced: false,
     date: todayJStr(),
     garden: GARDENS[0],
@@ -28,6 +29,7 @@ function emptyForm(): OrchardRecord {
     count: "",
     status: "انجام شد",
     note: "",
+    photos: [],
   };
 }
 
@@ -54,7 +56,7 @@ export default function OrchardPage() {
     e.preventDefault();
     if (!form.date) return toast.error("لطفاً تاریخ را وارد کنید.");
     if (!isDateEditable(form.date)) return toast.error(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
-    const record: OrchardRecord = { ...form, uid: editingUid ?? genUid(), synced: false };
+    const record: OrchardRecord = { ...form, synced: false };
     if (editingUid) await update(record);
     else await add(record);
     resetForm();
@@ -79,6 +81,7 @@ export default function OrchardPage() {
         </span>
       ),
     },
+    { key: "photos", label: "عکس", render: (r) => (r.photos?.length ? `📷 ${toFa(r.photos.length)}` : "—") },
   ];
 
   return (
@@ -125,6 +128,14 @@ export default function OrchardPage() {
               <TextInput value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="توضیحات اختیاری" />
             </FieldWrap>
           </div>
+          <FieldWrap label="عکس (اختیاری)">
+            <PhotoPicker
+              module="orchard"
+              uid={form.uid}
+              photos={form.photos ?? []}
+              onPhotosChange={(photos) => setForm((f) => ({ ...f, photos }))}
+            />
+          </FieldWrap>
           <div className="flex flex-wrap gap-3 pt-1">
             <Button type="submit" size="lg">
               {editingUid ? "💾 بروزرسانی رکورد" : "➕ ثبت کار باغی"}

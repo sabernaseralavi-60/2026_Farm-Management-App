@@ -13,6 +13,11 @@ export type ModuleKey =
 export interface Synced {
   uid: string;
   synced: boolean;
+  /** Public Vercel Blob URLs of confirmed-uploaded photos (see
+   * lib/photo-upload.ts). Only present on the modules that actually offer a
+   * photo picker (machinery, orchard, harvest, security) — undefined
+   * elsewhere, never a required field. */
+  photos?: string[];
 }
 
 export type WorkType = "base" | "lump";

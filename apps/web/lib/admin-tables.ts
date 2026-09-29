@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import type { TableColumn } from "./table-format";
 
 /** Registry behind the owner dashboard's "مرورگر جدول‌های داده" (data
  * browser) page/API. Every column and search field here is a fixed,
@@ -7,13 +8,7 @@ import { prisma } from "./prisma";
  * a raw filter/query, so this stays as safe as the read-only AI Q&A tool
  * while being far more direct for skimming/searching the raw records. */
 
-export interface TableColumn {
-  key: string;
-  label: string;
-  /** "number"/"boolean" get left-aligned + formatted; everything else is
-   * shown as plain text (already Persian-appropriate as stored). */
-  type?: "number" | "boolean" | "array";
-}
+export type { TableColumn };
 
 interface TableDef {
   label: string;
@@ -70,6 +65,7 @@ const TABLES: Record<string, TableDef> = {
       { key: "category", label: "رویداد" },
       { key: "details", label: "جزئیات" },
       { key: "cost", label: "هزینه/مصرف" },
+      { key: "photos", label: "عکس", type: "photos" },
     ],
     searchFields: ["machine", "driver", "details", "cost", "category"],
   },
@@ -110,6 +106,7 @@ const TABLES: Record<string, TableDef> = {
       { key: "count", label: "تعداد/مقدار", type: "number" },
       { key: "status", label: "وضعیت" },
       { key: "note", label: "توضیحات" },
+      { key: "photos", label: "عکس", type: "photos" },
     ],
     searchFields: ["garden", "task", "worker", "note"],
   },
@@ -151,6 +148,7 @@ const TABLES: Record<string, TableDef> = {
       { key: "price", label: "قیمت واحد", type: "number" },
       { key: "buyer", label: "خریدار" },
       { key: "note", label: "توضیحات" },
+      { key: "photos", label: "عکس", type: "photos" },
     ],
     searchFields: ["product", "buyer", "note"],
   },
@@ -178,6 +176,7 @@ const TABLES: Record<string, TableDef> = {
       { key: "identified", label: "شناسایی افراد" },
       { key: "action", label: "اقدام انجام‌شده" },
       { key: "reporter", label: "گزارش‌دهنده" },
+      { key: "photos", label: "عکس", type: "photos" },
     ],
     searchFields: ["title", "desc", "identified", "action", "reporter"],
   },

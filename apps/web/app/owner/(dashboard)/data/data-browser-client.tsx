@@ -119,7 +119,11 @@ export function DataBrowserClient() {
         const data = await res.json();
         if (!data.ok || !data.rows.length) break;
         for (const r of data.rows as Row[]) {
-          ws.addRow(table.columns.map((c) => (c.type === "array" ? (r[c.key] ?? []).join("، ") : (r[c.key] ?? ""))));
+          ws.addRow(
+            table.columns.map((c) =>
+              c.type === "array" || c.type === "photos" ? (r[c.key] ?? []).join(c.type === "photos" ? "\n" : "، ") : (r[c.key] ?? ""),
+            ),
+          );
         }
         if (p * 500 >= total || p * 500 >= CAP) break;
       }
@@ -235,11 +239,28 @@ export function DataBrowserClient() {
               ) : (
                 rows.map((r) => (
                   <tr key={r.uid ?? r.id} className="border-t border-sand-200 odd:bg-white/50 even:bg-sand-50/50">
-                    {columns.map((c) => (
-                      <td key={c.key} className="whitespace-nowrap px-3 py-2 text-bark-700">
-                        {formatCell(r, c)}
-                      </td>
-                    ))}
+                    {columns.map((c) =>
+                      c.type === "photos" ? (
+                        <td key={c.key} className="px-3 py-2">
+                          {Array.isArray(r[c.key]) && r[c.key].length ? (
+                            <div className="flex gap-1.5">
+                              {(r[c.key] as string[]).map((url) => (
+                                <a key={url} href={url} target="_blank" rel="noreferrer" className="block h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-sand-300">
+                                  {/* eslint-disable-next-line @next/next/no-img-element -- external Blob URL thumbnail */}
+                                  <img src={url} alt="" className="h-full w-full object-cover" />
+                                </a>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-bark-500">—</span>
+                          )}
+                        </td>
+                      ) : (
+                        <td key={c.key} className="whitespace-nowrap px-3 py-2 text-bark-700">
+                          {formatCell(r, c)}
+                        </td>
+                      ),
+                    )}
                   </tr>
                 ))
               )}

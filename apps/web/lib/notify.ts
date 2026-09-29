@@ -46,14 +46,16 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 function summarizeRecord(module: ModuleKey, data: Record<string, unknown>): string {
-  return HIGHLIGHT_FIELDS[module]
+  const fields = HIGHLIGHT_FIELDS[module]
     .map((f) => {
       const v = data[f];
       if (v === null || v === undefined || v === "") return null;
       return `${FIELD_LABELS[f] ?? f}: ${v}`;
     })
-    .filter(Boolean)
-    .join(" — ");
+    .filter(Boolean);
+  const photos = data.photos;
+  if (Array.isArray(photos) && photos.length) fields.push(`📷 ${photos.length} عکس`);
+  return fields.join(" — ");
 }
 
 let warnedMissingConfig = false;

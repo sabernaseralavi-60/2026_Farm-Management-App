@@ -29,6 +29,28 @@ export interface PendingDelete {
   uid: string;
 }
 
+/** A compressed photo (see lib/image-compress.ts) waiting to reach Vercel
+ * Blob — kept locally so it survives an offline gap or an app reload the
+ * same way an unsynced record does. Once uploaded, its URL is appended to
+ * the owning record's `photos` and this row is removed (see
+ * lib/photo-upload.ts). `uid` links it to a record that may not have
+ * reached the server yet either — that's fine, the record's own sync is
+ * independent and idempotent. */
+export interface PendingPhoto {
+  id: string;
+  module: ModuleKey;
+  uid: string;
+  blob: Blob;
+  mime: string;
+  createdAt: number;
+  /** Set once the bytes reach Vercel Blob. A photo can be uploaded before
+   * its owning record has ever been saved (the record is only created when
+   * the form is submitted) — when that happens this is filled in but the
+   * row stays queued, so lib/photo-upload.ts's retry sweep only has to
+   * attach the URL to the record, never re-upload the bytes. */
+  uploadedUrl?: string;
+}
+
 export class FarmDatabase extends Dexie {
   attendance!: Table<AttendanceRecord, string>;
   machinery!: Table<MachineryRecord, string>;
@@ -41,6 +63,7 @@ export class FarmDatabase extends Dexie {
   sheep!: Table<SheepRecord, string>;
   security!: Table<SecurityRecord, string>;
   pendingDeletes!: Table<PendingDelete, string>;
+  pendingPhotos!: Table<PendingPhoto, string>;
 
   constructor() {
     super("FarmDatabaseV2");
@@ -65,6 +88,12 @@ export class FarmDatabase extends Dexie {
     // the backend, so a "deleted" record lived forever in Postgres.
     this.version(2).stores({
       pendingDeletes: "id, module",
+    });
+    // v3: queue for compressed photos waiting to reach Vercel Blob (see
+    // PendingPhoto above) — same "never lose it, retry later" guarantee
+    // pendingDeletes gives deletes.
+    this.version(3).stores({
+      pendingPhotos: "id, module, uid",
     });
   }
 }

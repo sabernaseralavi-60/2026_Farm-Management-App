@@ -1,7 +1,7 @@
 "use client";
 
 import { create, type StoreApi, type UseBoundStore } from "zustand";
-import { MODULE_KEYS, tableFor } from "./db";
+import { db, MODULE_KEYS, tableFor } from "./db";
 import { queueDelete, queueSync } from "./sync";
 import { onRecordSynced } from "./sync-bus";
 import type { AnyRecord, ModuleKey, Synced } from "./types";
@@ -20,16 +20,21 @@ type ModuleStoreHook<T extends Synced> = UseBoundStore<StoreApi<ModuleState<T>>>
 const cache = new Map<ModuleKey, ModuleStoreHook<Synced>>();
 
 // One-time global subscription: whenever the sync engine confirms a record
-// reached the server, patch that row's `synced` flag in whichever module
-// store already has it cached in memory (Dexie was already updated by sync.ts).
+// reached the server, refresh that row in whichever module store already
+// has it cached in memory, straight from Dexie (already updated by
+// sync.ts/photo-upload.ts by the time this fires) — not just flipping
+// `synced`, so e.g. a photo URL appended after upload shows up too.
 if (typeof window !== "undefined") {
   onRecordSynced(({ module, uid }) => {
     const hook = cache.get(module as ModuleKey);
     if (!hook) return;
-    const { rows } = hook.getState();
-    hook.setState({
-      rows: rows.map((r) => (r.uid === uid ? { ...r, synced: true } : r)),
-    });
+    void tableFor(module as ModuleKey)
+      .get(uid)
+      .then((fresh) => {
+        if (!fresh) return;
+        const { rows } = hook.getState();
+        hook.setState({ rows: rows.map((r) => (r.uid === uid ? (fresh as unknown as Synced) : r)) });
+      });
   });
 }
 
@@ -76,5 +81,9 @@ export async function pendingSyncCount(): Promise<number> {
     const rows = (await tableFor(m).toArray()) as Synced[];
     total += rows.filter((r) => !r.synced).length;
   }
+  // Queued-but-not-yet-uploaded photos (see lib/photo-upload.ts) count too —
+  // otherwise the offline/pending badge would go quiet while a photo was
+  // still waiting to go out.
+  total += await db.pendingPhotos.count();
   return total;
 }

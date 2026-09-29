@@ -7,6 +7,7 @@ import { FieldWrap, Select, TextInput } from "@/components/ui/fields";
 import { GlassCard } from "@/components/ui/glass-card";
 import { JalaliDatePicker } from "@/components/ui/jalali-date-picker";
 import { ModuleHero } from "@/components/ui/module-hero";
+import { PhotoPicker } from "@/components/ui/photo-picker";
 import { EDITABLE_DAYS_BACK, isDateEditable } from "@/lib/date-policy";
 import { toFa, todayJStr } from "@/lib/jalaali";
 import { findModuleMeta } from "@/lib/module-meta";
@@ -19,7 +20,10 @@ const meta = findModuleMeta("machinery")!;
 
 function emptyForm(): MachineryRecord {
   return {
-    uid: "",
+    // Assigned up front (not just at submit) so a photo picked while still
+    // composing a brand-new record has a stable id to attach to — see
+    // components/ui/photo-picker.tsx.
+    uid: genUid(),
     synced: false,
     date: todayJStr(),
     machine: MACHINES[0],
@@ -30,6 +34,7 @@ function emptyForm(): MachineryRecord {
     category: MACHINERY_CATEGORIES[0],
     details: "",
     cost: "",
+    photos: [],
   };
 }
 
@@ -60,7 +65,7 @@ export default function MachineryPage() {
     const start = form.start === "" ? "" : Number(form.start);
     const end = form.end === "" ? "" : Number(form.end);
     const usefulHours = start !== "" && end !== "" && end >= start ? +(end - start).toFixed(2) : "";
-    const record: MachineryRecord = { ...form, uid: editingUid ?? genUid(), synced: false, start, end, usefulHours };
+    const record: MachineryRecord = { ...form, synced: false, start, end, usefulHours };
     if (editingUid) await update(record);
     else await add(record);
     resetForm();
@@ -73,6 +78,7 @@ export default function MachineryPage() {
     { key: "hours", label: "کارکرد مفید", render: (r) => (r.usefulHours === "" ? "—" : `${toFa(r.usefulHours)} ساعت`) },
     { key: "category", label: "رویداد", render: (r) => r.category },
     { key: "cost", label: "هزینه", render: (r) => r.cost || "—" },
+    { key: "photos", label: "عکس", render: (r) => (r.photos?.length ? `📷 ${toFa(r.photos.length)}` : "—") },
   ];
 
   return (
@@ -118,6 +124,14 @@ export default function MachineryPage() {
               <TextInput value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} placeholder="مثلاً ۴۰ لیتر یا ۲ میلیون تومان" />
             </FieldWrap>
           </div>
+          <FieldWrap label="عکس (اختیاری) — مثلاً محل خرابی">
+            <PhotoPicker
+              module="machinery"
+              uid={form.uid}
+              photos={form.photos ?? []}
+              onPhotosChange={(photos) => setForm((f) => ({ ...f, photos }))}
+            />
+          </FieldWrap>
           <div className="flex flex-wrap gap-3 pt-1">
             <Button type="submit" variant="brown" size="lg">
               {editingUid ? "💾 بروزرسانی رکورد" : "➕ ثبت رویداد ماشین"}

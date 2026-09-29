@@ -46,3 +46,5 @@ Thumbs.db
 
 # gstack local artifacts (security reports, qa reports — stay local)
 .gstack/
+
+.env*

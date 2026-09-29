@@ -79,6 +79,9 @@ model Machinery {
   category    String
   details     String?
   cost        String?
+  // Public Vercel Blob URLs — compressed client-side before upload (see
+  // lib/image-compress.ts); this column only ever holds finished uploads.
+  photos      String[] @default([])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -125,6 +128,7 @@ model Orchard {
   count     Float?
   status    String
   note      String?
+  photos    String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -173,6 +177,7 @@ model Harvest {
   price     Int?
   buyer     String?
   note      String?
+  photos    String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -204,6 +209,7 @@ model Security {
   identified  String?
   action      String?
   reporter    String?
+  photos      String[] @default([])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
