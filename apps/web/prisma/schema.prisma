@@ -33,6 +33,11 @@ model FieldUser {
   passwordHash String
   displayName  String
   modules      String[]
+  // Set only for the field user that's also the farm owner (Saber): lets
+  // that one worker-app login jump straight into the /owner dashboard via
+  // /api/owner/sso without a second, separate email/password login. Must
+  // match an existing Owner.email; left null for every other field user.
+  ownerEmail   String?
   createdAt    DateTime @default(now())
 }
 

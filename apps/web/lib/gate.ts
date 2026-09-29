@@ -14,12 +14,23 @@ export interface GateSession {
   access: GateAccess;
   /** FieldUser username; absent for the shared farm PIN. */
   user?: string;
+  /** Set only for the field user linked to an Owner account (Saber) — lets
+   * the worker layout offer a one-click jump into /owner (see
+   * /api/owner/sso) without a second login. */
+  ownerEmail?: string;
 }
 
 /** `user` omitted = the shared farm PIN (full access). Otherwise the token
- * is limited to `modules`. */
-export async function createGateToken(user?: { username: string; modules: string[] }): Promise<string> {
-  const claims = user ? { gate: true, user: user.username, modules: user.modules } : { gate: true };
+ * is limited to `modules`, and carries `ownerEmail` when that field user is
+ * linked to an Owner account. */
+export async function createGateToken(user?: {
+  username: string;
+  modules: string[];
+  ownerEmail?: string | null;
+}): Promise<string> {
+  const claims = user
+    ? { gate: true, user: user.username, modules: user.modules, ownerEmail: user.ownerEmail ?? undefined }
+    : { gate: true };
   return new SignJWT(claims)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -36,7 +47,11 @@ export async function getGateSession(token: string | undefined): Promise<GateSes
     // came from the shared PIN, so they keep full access.
     if (!Array.isArray(payload.modules)) return { access: "all" };
     const modules = payload.modules.filter((m): m is string => typeof m === "string");
-    return { access: modules, user: typeof payload.user === "string" ? payload.user : undefined };
+    return {
+      access: modules,
+      user: typeof payload.user === "string" ? payload.user : undefined,
+      ownerEmail: typeof payload.ownerEmail === "string" ? payload.ownerEmail : undefined,
+    };
   } catch {
     return null;
   }

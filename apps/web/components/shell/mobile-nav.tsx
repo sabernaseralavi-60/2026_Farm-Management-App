@@ -5,10 +5,11 @@ import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { useState } from "react";
 import { canAccessModule, type GateAccess } from "@/lib/access";
+import { AdminSsoLink } from "./admin-sso-link";
 import { GateLogoutButton } from "./gate-logout-button";
 import { MODULE_META, findModuleMeta } from "@/lib/module-meta";
 
-export function MobileNav({ access, user }: { access: GateAccess; user?: string }) {
+export function MobileNav({ access, user, ownerEmail }: { access: GateAccess; user?: string; ownerEmail?: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [lastPathname, setLastPathname] = useState(pathname);
@@ -76,6 +77,11 @@ export function MobileNav({ access, user }: { access: GateAccess; user?: string 
                   </Link>
                 );
               })}
+              {ownerEmail && (
+                <div className="mt-2 border-t border-sand-200 pt-2">
+                  <AdminSsoLink className="w-full justify-center" />
+                </div>
+              )}
             </nav>
           </div>
         </div>

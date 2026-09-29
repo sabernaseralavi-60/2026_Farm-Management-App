@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { canAccessModule, type GateAccess } from "@/lib/access";
+import { AdminSsoLink } from "./admin-sso-link";
 import { GateLogoutButton } from "./gate-logout-button";
 import { MODULE_META } from "@/lib/module-meta";
 
-export function TopNav({ access, user }: { access: GateAccess; user?: string }) {
+export function TopNav({ access, user, ownerEmail }: { access: GateAccess; user?: string; ownerEmail?: string }) {
   const pathname = usePathname();
   return (
     <nav className="glass sticky top-0 z-40 hidden border-b border-white/40 md:block">
@@ -29,6 +30,7 @@ export function TopNav({ access, user }: { access: GateAccess; user?: string }) 
             </Link>
           );
         })}
+        {ownerEmail && <AdminSsoLink className="my-1.5" />}
         <GateLogoutButton user={user} className="my-1.5 mr-2" />
       </div>
     </nav>
