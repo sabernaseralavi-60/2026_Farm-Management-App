@@ -1,5 +1,6 @@
 import { findModuleMeta } from "./module-meta";
 import { toFa } from "./jalaali";
+import { renderIrrigatedZoneMaps } from "./irrigation-map-image";
 import type { ModuleKey } from "./types";
 
 /** Notifies Saber on Bale whenever any worker-app login submits data — so
@@ -148,6 +149,22 @@ async function sendBaleMessage(text: string): Promise<void> {
   }
 }
 
+async function sendBalePhoto(buffer: Buffer, caption: string): Promise<void> {
+  const token = process.env.BALE_BOT_TOKEN;
+  const chatId = process.env.BALE_CHAT_ID;
+  if (!token || !chatId) return; // sendBaleMessage already logs the missing-config warning
+  try {
+    const form = new FormData();
+    form.append("chat_id", chatId);
+    form.append("caption", caption);
+    form.append("photo", new Blob([new Uint8Array(buffer)], { type: "image/png" }), "map.png");
+    const res = await fetch(`https://tapi.bale.ai/bot${token}/sendPhoto`, { method: "POST", body: form });
+    if (!res.ok) console.error("Bale photo notification failed", res.status, await res.text().catch(() => ""));
+  } catch (err) {
+    console.error("Bale photo notification failed", err);
+  }
+}
+
 /** Fire-and-forget — the caller should schedule this (see
  * lib/sync.ts's use of next/server's `after()`) so a Bale outage never
  * slows down or fails the worker's actual data-entry request. */
@@ -168,4 +185,18 @@ export async function notifyDataEntry(opts: {
     `${opts.baseUrl}/owner/data?table=${pageKey}`,
   ].filter(Boolean);
   await sendBaleMessage(lines.join("\n"));
+
+  // Irrigation gets a visual on top of the text: the same garden-map image
+  // the worker picked from, with a pin over every irrigated garden — much
+  // faster to read than a list of numbers.
+  if (opts.module === "irrigation" && Array.isArray(opts.data.gardens) && opts.data.gardens.length) {
+    try {
+      const maps = await renderIrrigatedZoneMaps(opts.data.gardens as number[], opts.baseUrl);
+      for (const m of maps) {
+        await sendBalePhoto(m.buffer, `${m.title} — باغ‌های آبیاری‌شده: ${toFa(m.gardenNumbers.join("، "))}`);
+      }
+    } catch (err) {
+      console.error("Bale irrigation map render failed", err);
+    }
+  }
 }
