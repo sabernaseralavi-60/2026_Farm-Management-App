@@ -10,6 +10,7 @@ const NAV = [
   { href: "/owner", label: "📊 داشبورد" },
   { href: "/owner/team", label: "👷 عملکرد کارگران" },
   { href: "/owner/ask", label: "🤖 پرسش هوشمند" },
+  { href: "/owner/data", label: "🗄️ مرورگر داده‌ها" },
 ];
 
 export default async function OwnerDashboardLayout({ children }: { children: React.ReactNode }) {
