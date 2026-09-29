@@ -13,6 +13,7 @@ import { findModuleMeta } from "@/lib/module-meta";
 import { HARVEST_PRODUCTS, genUid } from "@/lib/reference-data";
 import { useModuleStore } from "@/lib/store";
 import type { HarvestRecord } from "@/lib/types";
+import { toast } from "@/lib/toast";
 
 const meta = findModuleMeta("harvest")!;
 
@@ -51,8 +52,8 @@ export default function HarvestPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.date) return alert("لطفاً تاریخ را وارد کنید.");
-    if (!isDateEditable(form.date)) return alert(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
+    if (!form.date) return toast.error("لطفاً تاریخ را وارد کنید.");
+    if (!isDateEditable(form.date)) return toast.error(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
     const record: HarvestRecord = { ...form, uid: editingUid ?? genUid(), synced: false };
     if (editingUid) await update(record);
     else await add(record);

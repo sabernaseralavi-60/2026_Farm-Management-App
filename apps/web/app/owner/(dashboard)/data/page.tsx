@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { getOwnerSession } from "@/lib/session";
 import { DataBrowserClient } from "./data-browser-client";
 
@@ -8,5 +9,9 @@ import { DataBrowserClient } from "./data-browser-client";
 export default async function DataBrowserPage() {
   const session = await getOwnerSession();
   if (!session) redirect("/owner/login");
-  return <DataBrowserClient />;
+  return (
+    <Suspense>
+      <DataBrowserClient />
+    </Suspense>
+  );
 }

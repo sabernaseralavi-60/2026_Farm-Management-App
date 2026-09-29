@@ -35,12 +35,63 @@
 
 html {
   scroll-behavior: smooth;
+  color-scheme: light;
 }
 
 body {
   background: linear-gradient(160deg, var(--color-sand-50) 0%, var(--color-sand-100) 60%, #f0ece0 100%);
   color: var(--color-bark-800);
   min-height: 100vh;
+}
+
+/* ===== Dark mode =====
+ * Reuses the existing token system rather than re-theming every component:
+ * `sand-*` already means "neutral surface" everywhere (body bg, card
+ * fallback bg, hover states, borders) and `bark-*` already means "neutral
+ * text" everywhere, so remapping just those two scales here makes the whole
+ * app follow along. The colorful per-module gradient headers/buttons
+ * (leaf/water/gold) are left as-is — they're accent colors, not reading
+ * surfaces, and already read fine against a dark background. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-sand-50: #171310;
+  --color-sand-100: #1e1913;
+  --color-sand-200: #29231b;
+  --color-sand-300: #3a3226;
+
+  --color-bark-500: #b9ab98;
+  --color-bark-600: #d6cabb;
+  --color-bark-700: #ece4d7;
+  --color-bark-800: #faf6ef;
+
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-glass-lg: 0 20px 50px rgba(0, 0, 0, 0.55);
+}
+
+:root[data-theme="dark"] body {
+  background: linear-gradient(160deg, #141110 0%, #1a1512 60%, #100d0b 100%);
+}
+
+:root[data-theme="dark"] .glass {
+  background: rgba(38, 32, 25, 0.6);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="dark"] .glass-strong {
+  background: rgba(28, 24, 19, 0.86);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-bark-800);
+}
+
+:root[data-theme="dark"] .data-table tbody tr {
+  background: rgba(38, 32, 25, 0.7);
 }
 
 /* ===== Glassmorphism primitives ===== */

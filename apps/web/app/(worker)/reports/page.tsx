@@ -14,6 +14,7 @@ import { MACHINES } from "@/lib/reference-data";
 import { attendanceQuery, buildManagementReport, machineryQuery, periodRange, type AllModulesData, type Period } from "@/lib/report";
 import { pendingSyncCount, useModuleStore } from "@/lib/store";
 import { syncPendingAll } from "@/lib/sync";
+import { toast } from "@/lib/toast";
 import type {
   AccountingRecord,
   AttendanceRecord,
@@ -71,24 +72,24 @@ export default function ReportsPage() {
   const [reportText, setReportText] = useState("");
 
   function generateReport() {
-    if (!repDate) return alert("تاریخ مرجع گزارش را انتخاب کنید.");
+    if (!repDate) return toast.error("تاریخ مرجع گزارش را انتخاب کنید.");
     setReportText(buildManagementReport(period, repDate, data));
   }
 
   function copyReport() {
-    if (!reportText.trim()) return alert("ابتدا گزارش را تولید کنید.");
+    if (!reportText.trim()) return toast.error("ابتدا گزارش را تولید کنید.");
     navigator.clipboard?.writeText(reportText).catch(() => {});
   }
   function shareWhatsApp() {
-    if (!reportText.trim()) return alert("ابتدا گزارش را تولید کنید.");
+    if (!reportText.trim()) return toast.error("ابتدا گزارش را تولید کنید.");
     window.open("https://wa.me/?text=" + encodeURIComponent(reportText), "_blank");
   }
   function shareTelegram() {
-    if (!reportText.trim()) return alert("ابتدا گزارش را تولید کنید.");
+    if (!reportText.trim()) return toast.error("ابتدا گزارش را تولید کنید.");
     window.open("https://t.me/share/url?url=%20&text=" + encodeURIComponent(reportText), "_blank");
   }
   function downloadReportTxt() {
-    if (!reportText.trim()) return alert("ابتدا گزارش را تولید کنید.");
+    if (!reportText.trim()) return toast.error("ابتدا گزارش را تولید کنید.");
     const blob = new Blob([reportText], { type: "text/plain;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -105,7 +106,7 @@ export default function ReportsPage() {
   const [attResult, setAttResult] = useState<ReturnType<typeof attendanceQuery> | null>(null);
 
   function runAttendanceQuery() {
-    if (!qAttWorker.trim() || !qAttFrom || !qAttTo) return alert("نام کارگر و بازه تاریخ را کامل وارد کنید.");
+    if (!qAttWorker.trim() || !qAttFrom || !qAttTo) return toast.error("نام کارگر و بازه تاریخ را کامل وارد کنید.");
     setAttResult(attendanceQuery(attendance.rows, qAttWorker.trim(), qAttFrom, qAttTo, qAttNoFri));
   }
 
@@ -115,7 +116,7 @@ export default function ReportsPage() {
   const [machResult, setMachResult] = useState<ReturnType<typeof machineryQuery> | null>(null);
 
   function runMachineryQuery() {
-    if (!qMachFrom || !qMachTo) return alert("نام ماشین و بازه تاریخ را کامل وارد کنید.");
+    if (!qMachFrom || !qMachTo) return toast.error("نام ماشین و بازه تاریخ را کامل وارد کنید.");
     setMachResult(machineryQuery(machinery.rows, qMachName, qMachFrom, qMachTo));
   }
 
@@ -131,14 +132,14 @@ export default function ReportsPage() {
     const res = await syncPendingAll();
     setSyncing(false);
     setPending(await pendingSyncCount());
-    alert(`${toFa(res.done)} رکورد همگام‌سازی شد${res.fail ? `، ${toFa(res.fail)} مورد ناموفق` : ""}.`);
+    toast.info(`${toFa(res.done)} رکورد همگام‌سازی شد${res.fail ? `، ${toFa(res.fail)} مورد ناموفق` : ""}.`);
   }
 
   // ===== Excel export =====
   const [exportScope, setExportScope] = useState<"all" | "period">("all");
   async function onExportExcel() {
     const range = exportScope === "period" ? periodRange(period, repDate) : null;
-    if (exportScope === "period" && !repDate) return alert("برای خروجی بازه‌ای، تاریخ مرجع گزارش را انتخاب کنید.");
+    if (exportScope === "period" && !repDate) return toast.error("برای خروجی بازه‌ای، تاریخ مرجع گزارش را انتخاب کنید.");
     await exportConsolidatedExcel(data, range, exportScope === "period" ? repDate.replace(/\//g, "-") : "AllTime");
   }
 
@@ -150,9 +151,9 @@ export default function ReportsPage() {
     try {
       await restoreJSON(file);
       stores.forEach((s) => void s.load());
-      alert("داده‌ها از فایل پشتیبان بازیابی شد.");
+      toast.success("داده‌ها از فایل پشتیبان بازیابی شد.");
     } catch {
-      alert("فایل پشتیبان نامعتبر است.");
+      toast.error("فایل پشتیبان نامعتبر است.");
     } finally {
       e.target.value = "";
     }
@@ -161,7 +162,7 @@ export default function ReportsPage() {
     if (!confirm("همه داده‌های ذخیره‌شده پاک شود؟ این عمل قابل بازگشت نیست.")) return;
     await clearAllData();
     stores.forEach((s) => void s.load());
-    alert("همه داده‌ها پاک شد.");
+    toast.success("همه داده‌ها پاک شد.");
   }
 
   return (

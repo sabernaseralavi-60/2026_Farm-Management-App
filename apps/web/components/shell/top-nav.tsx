@@ -6,6 +6,8 @@ import { clsx } from "clsx";
 import { canAccessModule, type GateAccess } from "@/lib/access";
 import { AdminSsoLink } from "./admin-sso-link";
 import { GateLogoutButton } from "./gate-logout-button";
+import { OfflineBadge } from "./offline-badge";
+import { ThemeToggle } from "./theme-toggle";
 import { MODULE_META } from "@/lib/module-meta";
 
 export function TopNav({ access, user, ownerEmail }: { access: GateAccess; user?: string; ownerEmail?: string }) {
@@ -30,8 +32,10 @@ export function TopNav({ access, user, ownerEmail }: { access: GateAccess; user?
             </Link>
           );
         })}
+        <OfflineBadge className="my-1.5 mr-2" />
         {ownerEmail && <AdminSsoLink className="my-1.5" />}
-        <GateLogoutButton user={user} className="my-1.5 mr-2" />
+        <ThemeToggle className="my-1.5" />
+        <GateLogoutButton user={user} className="my-1.5" />
       </div>
     </nav>
   );

@@ -13,6 +13,7 @@ import { findModuleMeta } from "@/lib/module-meta";
 import { SEC_ACTION, SEC_IDENT, SEC_TYPES, genUid } from "@/lib/reference-data";
 import { useModuleStore } from "@/lib/store";
 import type { SecurityRecord } from "@/lib/types";
+import { toast } from "@/lib/toast";
 
 const meta = findModuleMeta("security")!;
 
@@ -51,9 +52,9 @@ export default function SecurityPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.date) return alert("لطفاً تاریخ را وارد کنید.");
-    if (!isDateEditable(form.date)) return alert(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
-    if (!form.title.trim()) return alert("عنوان حادثه را وارد کنید.");
+    if (!form.date) return toast.error("لطفاً تاریخ را وارد کنید.");
+    if (!isDateEditable(form.date)) return toast.error(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
+    if (!form.title.trim()) return toast.error("عنوان حادثه را وارد کنید.");
     const record: SecurityRecord = { ...form, uid: editingUid ?? genUid(), synced: false, title: form.title.trim() };
     if (editingUid) await update(record);
     else await add(record);

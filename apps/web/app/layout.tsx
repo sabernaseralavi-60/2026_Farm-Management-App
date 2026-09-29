@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Vazirmatn } from "next/font/google";
 import { SyncEngineInit } from "@/components/system/sync-engine-init";
 import { SwRegister } from "@/components/system/sw-register";
+import { ThemeInit } from "@/components/system/theme-init";
+import { Toaster } from "@/components/shell/toaster";
 import "./globals.css";
 
 const vazirmatn = Vazirmatn({
@@ -33,8 +35,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fa" dir="rtl" data-scroll-behavior="smooth" className={vazirmatn.variable}>
       <body className="min-h-screen antialiased">
+        <ThemeInit />
         <SyncEngineInit />
         <SwRegister />
+        <Toaster />
         {children}
       </body>
     </html>

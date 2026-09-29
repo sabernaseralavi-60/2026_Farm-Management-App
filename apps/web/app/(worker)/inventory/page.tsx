@@ -13,6 +13,7 @@ import { findModuleMeta } from "@/lib/module-meta";
 import { INVENTORY_UNITS, genUid } from "@/lib/reference-data";
 import { useModuleStore } from "@/lib/store";
 import type { InventoryRecord, InventoryType } from "@/lib/types";
+import { toast } from "@/lib/toast";
 
 const meta = findModuleMeta("inventory")!;
 
@@ -51,9 +52,9 @@ export default function InventoryPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.date) return alert("لطفاً تاریخ را وارد کنید.");
-    if (!isDateEditable(form.date)) return alert(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
-    if (!form.item.trim()) return alert("نام کالا را وارد کنید.");
+    if (!form.date) return toast.error("لطفاً تاریخ را وارد کنید.");
+    if (!isDateEditable(form.date)) return toast.error(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
+    if (!form.item.trim()) return toast.error("نام کالا را وارد کنید.");
     const record: InventoryRecord = { ...form, uid: editingUid ?? genUid(), synced: false, item: form.item.trim() };
     if (editingUid) await update(record);
     else await add(record);

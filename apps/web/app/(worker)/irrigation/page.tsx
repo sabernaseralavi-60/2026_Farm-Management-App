@@ -15,6 +15,7 @@ import { findModuleMeta } from "@/lib/module-meta";
 import { IRRIGATION_GARDEN_TOTAL, IRRIGATION_ZONES } from "@/lib/reference-data";
 import { useModuleStore } from "@/lib/store";
 import type { IrrigationRecord } from "@/lib/types";
+import { toast } from "@/lib/toast";
 
 const meta = findModuleMeta("irrigation")!;
 
@@ -76,14 +77,14 @@ export default function IrrigationPage() {
   }
 
   async function save() {
-    if (!date) return alert("تاریخ را انتخاب کنید.");
-    if (locked) return alert("این روز قفل شده و دیگر قابل ثبت/ویرایش نیست.");
+    if (!date) return toast.error("تاریخ را انتخاب کنید.");
+    if (locked) return toast.error("این روز قفل شده و دیگر قابل ثبت/ویرایش نیست.");
     const gardens = [...selected].sort((a, b) => a - b);
     const record: IrrigationRecord = { uid: date, synced: false, date, worker: worker.trim(), gardens, count: gardens.length };
     const exists = rows.some((r) => r.uid === date);
     if (exists) await update(record);
     else await add(record);
-    alert(`آبیاری روز ${toFa(date)} با ${toFa(gardens.length)} باغ بایگانی شد.`);
+    toast.success(`آبیاری روز ${toFa(date)} با ${toFa(gardens.length)} باغ بایگانی شد.`);
   }
 
   function loadRow(row: IrrigationRecord) {

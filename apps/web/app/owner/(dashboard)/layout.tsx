@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ThemeToggle } from "@/components/shell/theme-toggle";
+import { GlobalSearch } from "@/components/owner/global-search";
 import { getOwnerSession } from "@/lib/session";
 import { LogoutButton } from "./logout-button";
 
@@ -39,7 +41,11 @@ export default async function OwnerDashboardLayout({ children }: { children: Rea
             </Link>
           ))}
         </nav>
-        <LogoutButton />
+        <GlobalSearch />
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <LogoutButton />
+        </div>
       </header>
       <main className="mx-auto max-w-6xl p-4 sm:p-8">{children}</main>
     </div>

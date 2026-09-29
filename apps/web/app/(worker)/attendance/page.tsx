@@ -14,6 +14,7 @@ import { genUid } from "@/lib/reference-data";
 import { toFa, todayJStr } from "@/lib/jalaali";
 import { useModuleStore } from "@/lib/store";
 import type { AttendanceRecord, AttendanceStatus, LeaveType, ShiftEntry } from "@/lib/types";
+import { toast } from "@/lib/toast";
 
 const meta = findModuleMeta("attendance")!;
 
@@ -66,11 +67,11 @@ export default function AttendancePage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.date) return alert("لطفاً تاریخ را وارد کنید.");
-    if (!isDateEditable(form.date)) return alert(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
-    if (!form.worker.trim()) return alert("نام کارگر را وارد کنید.");
+    if (!form.date) return toast.error("لطفاً تاریخ را وارد کنید.");
+    if (!isDateEditable(form.date)) return toast.error(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
+    if (!form.worker.trim()) return toast.error("نام کارگر را وارد کنید.");
     if (form.status === "present" && !morningOn && !eveningOn) {
-      return alert("حداقل یکی از شیفت‌های صبح یا عصر را فعال کنید، یا وضعیت را «مرخصی» انتخاب کنید.");
+      return toast.error("حداقل یکی از شیفت‌های صبح یا عصر را فعال کنید، یا وضعیت را «مرخصی» انتخاب کنید.");
     }
 
     const record: AttendanceRecord = {

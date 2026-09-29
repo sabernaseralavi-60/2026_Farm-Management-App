@@ -13,6 +13,7 @@ import { findModuleMeta } from "@/lib/module-meta";
 import { MACHINERY_CATEGORIES, MACHINES, genUid } from "@/lib/reference-data";
 import { useModuleStore } from "@/lib/store";
 import type { MachineryRecord } from "@/lib/types";
+import { toast } from "@/lib/toast";
 
 const meta = findModuleMeta("machinery")!;
 
@@ -54,8 +55,8 @@ export default function MachineryPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.date) return alert("لطفاً تاریخ را وارد کنید.");
-    if (!isDateEditable(form.date)) return alert(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
+    if (!form.date) return toast.error("لطفاً تاریخ را وارد کنید.");
+    if (!isDateEditable(form.date)) return toast.error(`فقط می‌توانید برای امروز یا ${EDITABLE_DAYS_BACK} روز اخیر ثبت/ویرایش کنید.`);
     const start = form.start === "" ? "" : Number(form.start);
     const end = form.end === "" ? "" : Number(form.end);
     const usefulHours = start !== "" && end !== "" && end >= start ? +(end - start).toFixed(2) : "";

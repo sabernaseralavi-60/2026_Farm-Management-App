@@ -7,6 +7,8 @@ import { useState } from "react";
 import { canAccessModule, type GateAccess } from "@/lib/access";
 import { AdminSsoLink } from "./admin-sso-link";
 import { GateLogoutButton } from "./gate-logout-button";
+import { OfflineBadge } from "./offline-badge";
+import { ThemeToggle } from "./theme-toggle";
 import { MODULE_META, findModuleMeta } from "@/lib/module-meta";
 
 export function MobileNav({ access, user, ownerEmail }: { access: GateAccess; user?: string; ownerEmail?: string }) {
@@ -34,10 +36,14 @@ export function MobileNav({ access, user, ownerEmail }: { access: GateAccess; us
         >
           ☰
         </button>
-        <span className="flex items-center gap-2 font-extrabold text-bark-700">
-          <span aria-hidden>{current?.icon}</span> {current?.navLabel}
+        <span className="flex min-w-0 items-center gap-2 font-extrabold text-bark-700">
+          <span aria-hidden>{current?.icon}</span>
+          <span className="truncate">{current?.navLabel}</span>
         </span>
-        <GateLogoutButton user={user} className="px-2" />
+        <div className="flex shrink-0 items-center gap-1">
+          <OfflineBadge />
+          <GateLogoutButton user={user} className="px-2" />
+        </div>
       </div>
 
       {open && (
@@ -77,11 +83,10 @@ export function MobileNav({ access, user, ownerEmail }: { access: GateAccess; us
                   </Link>
                 );
               })}
-              {ownerEmail && (
-                <div className="mt-2 border-t border-sand-200 pt-2">
-                  <AdminSsoLink className="w-full justify-center" />
-                </div>
-              )}
+              <div className="mt-2 flex items-center gap-2 border-t border-sand-200 pt-2">
+                {ownerEmail && <AdminSsoLink className="flex-1 justify-center" />}
+                <ThemeToggle className="border border-sand-300" />
+              </div>
             </nav>
           </div>
         </div>

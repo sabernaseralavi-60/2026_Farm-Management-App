@@ -1,18 +1,14 @@
 "use client";
 
 import { clsx } from "clsx";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FieldWrap, TextInput } from "@/components/ui/fields";
 import { GlassCard } from "@/components/ui/glass-card";
 import { JalaliDatePicker } from "@/components/ui/jalali-date-picker";
-import { money, toFa } from "@/lib/jalaali";
-
-interface TableColumn {
-  key: string;
-  label: string;
-  type?: "number" | "boolean" | "array";
-}
+import { toFa } from "@/lib/jalaali";
+import { formatCell, type Row, type TableColumn } from "@/lib/table-format";
 
 interface TableListing {
   key: string;
@@ -21,27 +17,21 @@ interface TableListing {
   columns: TableColumn[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Row = Record<string, any>;
-
 const PAGE_SIZE = 50;
 
-function formatCell(row: Row, col: TableColumn) {
-  const v = row[col.key];
-  if (v === null || v === undefined || v === "") return "—";
-  if (col.type === "boolean") return v ? "✓" : "—";
-  if (col.type === "array") return Array.isArray(v) && v.length ? toFa(v.join("، ")) : "—";
-  if (col.type === "number") return money(v);
-  return String(v);
-}
-
 export function DataBrowserClient() {
+  // Lets a link from the global search box (or any other page) deep-link
+  // straight into a table with a query pre-filled, e.g. /owner/data?table=machinery&q=ماهیندرا.
+  const searchParams = useSearchParams();
+  const initialTable = searchParams.get("table");
+  const initialQ = searchParams.get("q") ?? "";
+
   const [tables, setTables] = useState<TableListing[] | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQ);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,8 +43,11 @@ export function DataBrowserClient() {
       const res = await fetch("/api/owner/data");
       const data = await res.json();
       setTables(data.tables);
-      setActive((prev) => prev ?? data.tables?.[0]?.key ?? null);
+      const valid = initialTable && data.tables?.some((t: TableListing) => t.key === initialTable);
+      setActive((prev) => prev ?? (valid ? initialTable : data.tables?.[0]?.key) ?? null);
     })();
+    // Only ever meant to run once, off the URL as it was on first mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Reset to page 1 whenever the table or filters change (adjusting state
