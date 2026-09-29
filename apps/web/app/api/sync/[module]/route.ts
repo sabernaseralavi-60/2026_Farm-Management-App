@@ -2,7 +2,9 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { isDateEditable } from "@/lib/date-policy";
 import { canSyncModule } from "@/lib/access";
+import type { GateSession } from "@/lib/gate";
 import { GATE_COOKIE, getGateSession } from "@/lib/gate";
+import { notifyDataEntry } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 import { SYNC_SCHEMAS, toPrismaData } from "@/lib/sync-schemas";
 import type { ModuleKey } from "@/lib/types";
@@ -22,6 +24,29 @@ const DELEGATE: Record<ModuleKey, keyof typeof prisma> = {
 
 function isModuleKey(v: string): v is ModuleKey {
   return v in SYNC_SCHEMAS;
+}
+
+/** Pings Saber on Bale when a *named* worker-app login other than his own
+ * (see FieldUser.ownerEmail) enters or removes something — the shared farm
+ * PIN and Saber's own linked login stay silent, since neither needs to be
+ * reported to Saber. Fire-and-forget: never awaited by the caller, and
+ * notify.ts itself swallows delivery errors — a Bale outage must never
+ * affect the actual sync response. */
+function notifyIfLimitedUser(
+  gate: GateSession,
+  action: "ثبت/ویرایش" | "حذف",
+  module: ModuleKey,
+  data: Record<string, unknown>,
+  request: Request,
+) {
+  if (!gate.user || gate.ownerEmail) return;
+  void notifyDataEntry({
+    action,
+    module,
+    displayName: gate.displayName ?? gate.user,
+    data,
+    baseUrl: new URL(request.url).origin,
+  });
 }
 
 // POST /api/sync/[module] — idempotent upsert keyed on the client-generated
@@ -80,6 +105,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/sync/[modul
       create: { uid, ...data },
       update: data,
     });
+    notifyIfLimitedUser(gate, "ثبت/ویرایش", module, parsed.data as Record<string, unknown>, request);
     return NextResponse.json({ ok: true, uid: saved.uid });
   } catch (err) {
     console.error(`sync upsert failed for ${module}`, err);
@@ -135,6 +161,7 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/sync/[mod
       );
     }
     await delegate.delete({ where: { uid } });
+    notifyIfLimitedUser(gate, "حذف", module, existing as Record<string, unknown>, request);
     return NextResponse.json({ ok: true, uid });
   } catch (err) {
     console.error(`sync delete failed for ${module}`, err);

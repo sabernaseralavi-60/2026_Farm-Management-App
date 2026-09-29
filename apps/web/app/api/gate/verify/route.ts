@@ -53,7 +53,12 @@ export async function POST(request: Request) {
     if (!user || !valid) {
       return NextResponse.json({ ok: false, error: "نام کاربری یا رمز اشتباه است" }, { status: 401 });
     }
-    const token = await createGateToken({ username: user.username, modules: user.modules, ownerEmail: user.ownerEmail });
+    const token = await createGateToken({
+      username: user.username,
+      displayName: user.displayName,
+      modules: user.modules,
+      ownerEmail: user.ownerEmail,
+    });
     cookieStore.set(GATE_COOKIE, token, GATE_COOKIE_OPTIONS);
     return NextResponse.json({ ok: true, home: homePathFor(user.modules) });
   }

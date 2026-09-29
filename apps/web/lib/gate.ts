@@ -14,6 +14,9 @@ export interface GateSession {
   access: GateAccess;
   /** FieldUser username; absent for the shared farm PIN. */
   user?: string;
+  /** FieldUser.displayName — used for the "X entered data" Bale
+   * notification (see lib/notify.ts). Absent for the shared farm PIN. */
+  displayName?: string;
   /** Set only for the field user linked to an Owner account (Saber) — lets
    * the worker layout offer a one-click jump into /owner (see
    * /api/owner/sso) without a second login. */
@@ -25,11 +28,18 @@ export interface GateSession {
  * linked to an Owner account. */
 export async function createGateToken(user?: {
   username: string;
+  displayName: string;
   modules: string[];
   ownerEmail?: string | null;
 }): Promise<string> {
   const claims = user
-    ? { gate: true, user: user.username, modules: user.modules, ownerEmail: user.ownerEmail ?? undefined }
+    ? {
+        gate: true,
+        user: user.username,
+        displayName: user.displayName,
+        modules: user.modules,
+        ownerEmail: user.ownerEmail ?? undefined,
+      }
     : { gate: true };
   return new SignJWT(claims)
     .setProtectedHeader({ alg: "HS256" })
@@ -50,6 +60,7 @@ export async function getGateSession(token: string | undefined): Promise<GateSes
     return {
       access: modules,
       user: typeof payload.user === "string" ? payload.user : undefined,
+      displayName: typeof payload.displayName === "string" ? payload.displayName : undefined,
       ownerEmail: typeof payload.ownerEmail === "string" ? payload.ownerEmail : undefined,
     };
   } catch {
