@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { isDateEditable } from "@/lib/date-policy";
 import { canSyncModule } from "@/lib/access";
 import type { GateSession } from "@/lib/gate";
@@ -29,9 +29,13 @@ function isModuleKey(v: string): v is ModuleKey {
 /** Pings Saber on Bale when a *named* worker-app login other than his own
  * (see FieldUser.ownerEmail) enters or removes something — the shared farm
  * PIN and Saber's own linked login stay silent, since neither needs to be
- * reported to Saber. Fire-and-forget: never awaited by the caller, and
- * notify.ts itself swallows delivery errors — a Bale outage must never
- * affect the actual sync response. */
+ * reported to Saber. Scheduled via next/server's `after()`, not a bare
+ * `void` fire-and-forget: on Vercel's serverless runtime an un-awaited
+ * promise can simply be killed the instant the response is sent, so the
+ * Bale request might never actually leave the function. `after()` keeps
+ * the function alive long enough to finish it, while still letting the
+ * response return immediately — and notify.ts itself swallows delivery
+ * errors, so a Bale outage still can't affect the sync response. */
 function notifyIfLimitedUser(
   gate: GateSession,
   action: "ثبت/ویرایش" | "حذف",
@@ -40,13 +44,9 @@ function notifyIfLimitedUser(
   request: Request,
 ) {
   if (!gate.user || gate.ownerEmail) return;
-  void notifyDataEntry({
-    action,
-    module,
-    displayName: gate.displayName ?? gate.user,
-    data,
-    baseUrl: new URL(request.url).origin,
-  });
+  const baseUrl = new URL(request.url).origin;
+  const displayName = gate.displayName ?? gate.user;
+  after(() => notifyDataEntry({ action, module, displayName, data, baseUrl }));
 }
 
 // POST /api/sync/[module] — idempotent upsert keyed on the client-generated
