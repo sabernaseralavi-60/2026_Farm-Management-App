@@ -26,26 +26,24 @@ function isModuleKey(v: string): v is ModuleKey {
   return v in SYNC_SCHEMAS;
 }
 
-/** Pings Saber on Bale when a *named* worker-app login other than his own
- * (see FieldUser.ownerEmail) enters or removes something — the shared farm
- * PIN and Saber's own linked login stay silent, since neither needs to be
- * reported to Saber. Scheduled via next/server's `after()`, not a bare
- * `void` fire-and-forget: on Vercel's serverless runtime an un-awaited
- * promise can simply be killed the instant the response is sent, so the
- * Bale request might never actually leave the function. `after()` keeps
- * the function alive long enough to finish it, while still letting the
- * response return immediately — and notify.ts itself swallows delivery
- * errors, so a Bale outage still can't affect the sync response. */
-function notifyIfLimitedUser(
+/** Pings Saber on Bale for every worker-app entry/removal — his own
+ * (including from his phone) as well as every named login (Milad, Mousa,
+ * ...) and the shared farm PIN. Scheduled via next/server's `after()`, not
+ * a bare `void` fire-and-forget: on Vercel's serverless runtime an
+ * un-awaited promise can simply be killed the instant the response is
+ * sent, so the Bale request might never actually leave the function.
+ * `after()` keeps the function alive long enough to finish it, while still
+ * letting the response return immediately — and notify.ts itself swallows
+ * delivery errors, so a Bale outage still can't affect the sync response. */
+function notifyDataChange(
   gate: GateSession,
   action: "ثبت/ویرایش" | "حذف",
   module: ModuleKey,
   data: Record<string, unknown>,
   request: Request,
 ) {
-  if (!gate.user || gate.ownerEmail) return;
   const baseUrl = new URL(request.url).origin;
-  const displayName = gate.displayName ?? gate.user;
+  const displayName = gate.displayName ?? gate.user ?? "رمز مشترک مزرعه";
   after(() => notifyDataEntry({ action, module, displayName, data, baseUrl }));
 }
 
@@ -105,7 +103,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/sync/[modul
       create: { uid, ...data },
       update: data,
     });
-    notifyIfLimitedUser(gate, "ثبت/ویرایش", module, parsed.data as Record<string, unknown>, request);
+    notifyDataChange(gate, "ثبت/ویرایش", module, parsed.data as Record<string, unknown>, request);
     return NextResponse.json({ ok: true, uid: saved.uid });
   } catch (err) {
     console.error(`sync upsert failed for ${module}`, err);
@@ -161,7 +159,7 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/sync/[mod
       );
     }
     await delegate.delete({ where: { uid } });
-    notifyIfLimitedUser(gate, "حذف", module, existing as Record<string, unknown>, request);
+    notifyDataChange(gate, "حذف", module, existing as Record<string, unknown>, request);
     return NextResponse.json({ ok: true, uid });
   } catch (err) {
     console.error(`sync delete failed for ${module}`, err);
